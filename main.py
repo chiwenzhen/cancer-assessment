@@ -36,18 +36,14 @@ class App:
         canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 
-        # 添加两个输入框，用于输入细胞特征
-        label1 = Label(self.root, text="radius")
-        label1.pack(side=LEFT)
-        self.slide1 = Scale(self.root, from_=np.min(x_origin[:, 0]), to=np.max(x_origin[:, 0]), orient=HORIZONTAL,
-                            command=self.predict)
-        self.slide1.pack(side=LEFT)
-
-        label2 = Label(self.root, text="texture")
-        label2.pack(side=LEFT)
-        self.slide2 = Scale(self.root, from_=np.min(x_origin[:, 1]), to=np.max(x_origin[:, 1]), orient=HORIZONTAL,
-                            command=self.predict)
-        self.slide2.pack(side=LEFT)
+        # 添加特征输入滑条
+        feature_num = x_origin.shape[1]
+        self.slides = [None] * feature_num
+        for i in range(feature_num):
+            Label(self.root, text="feature " + str(i)).pack(side=LEFT)
+            self.slides[i] = Scale(self.root, from_=np.min(x_origin[:, i]), to=np.max(x_origin[:, i]),
+                                   orient=HORIZONTAL, command=self.predict)
+            self.slides[i].pack(side=LEFT)
 
         self.malig_prob = StringVar()
         label3 = Label(self.root, text="malignant prob")
@@ -81,9 +77,9 @@ class App:
         self.last_line = lines.pop(0)
 
     def predict(self, trival):
-        x = np.array([[float(self.slide1.get()), float(self.slide2.get()), 122.8, 1001, 0.1184, 0.2776, 0.3001, 0.1471,
-                       0.2419, 0.07871, 1.095, 0.9053, 8.589, 153.4, 0.006399, 0.04904, 0.05373, 0.01587, 0.03003,
-                       0.006193, 25.38, 17.33, 184.6, 2019, 0.1622, 0.6656, 0.7119, 0.2654, 0.4601, 0.1189]])
+        x = np.arange(30, dtype='f').reshape((1, 30))
+        for i in range(30):
+            x[0, i] = float(self.slides[i].get())
         result = self.evaluator.predict(x)
         self.malig_prob.set(result[0, 1])  # 恶性肿瘤的概率
         self.plot_point(self.subplot, self.evaluator.reduce(x))
@@ -94,7 +90,6 @@ class App:
 
 
 def plot_hyperplane(subplot, clf, min_x, max_x):
-    # get the separating hyperplane
     w = clf.coef_[0]
     xx = np.linspace(min_x, max_x)
     yy = -(w[0] * xx + clf.intercept_[0]) / w[1]
