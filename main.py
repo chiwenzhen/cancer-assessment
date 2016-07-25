@@ -24,19 +24,25 @@ class App:
         # 构建UI
         self.root = Tk()
         self.root.wm_title("Breast Cancer Evaluation Platform")
+        # 1.菜单
         menubar = Menu(self.root)  # 添加菜单
         self.root.config(menu=menubar)
         filemenu = Menu(menubar)
         filemenu.add_command(label="Exit", command=sys.exit)
         menubar.add_cascade(label="File", menu=filemenu)
-
+        # 2.matplotlib绘制和内嵌
         self.figure = Figure(figsize=(5, 4), dpi=100)
+        self.subplot = self.figure.add_subplot(111)
+        self.plot_subplot(self.subplot, x, y)
+        minx = np.min(x[:, 0])
+        maxx = np.max(x[:, 0])
+        self.plot_hyperplane(self.subplot, self.evaluator.get_clf(), minx, maxx)
+        self.last_line = None
         canvas = FigureCanvasTkAgg(self.figure, master=self.root)
         canvas.show()
         canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
-
-        # 添加特征输入滑条
+        # 3.滑动条
         feature_num = x_origin.shape[1]
         self.slides = [None] * feature_num
         for i in range(feature_num):
@@ -46,20 +52,12 @@ class App:
             self.slides[i] = Scale(self.root, from_=min_x, to=max_x, resolution=(max_x - min_x) / 100.0,
                                    orient=HORIZONTAL, command=self.predict)
             self.slides[i].pack(side=LEFT)
-
+        # 4.概率输出框
         self.malig_prob = StringVar()
         label3 = Label(self.root, text="malignant prob")
         label3.pack(side=LEFT)
         self.entry3 = Entry(self.root, textvariable=self.malig_prob, bd=5)
         self.entry3.pack(side=LEFT)
-
-        # matplotlib绘制图
-        self.subplot = self.figure.add_subplot(111)
-        self.plot_subplot(self.subplot, x, y)
-        minx = np.min(x[:, 0])
-        maxx = np.max(x[:, 0])
-        self.plot_hyperplane(self.subplot, self.evaluator.get_clf(), minx, maxx)
-        self.last_line = None
 
     @staticmethod
     def plot_subplot(subplot, x, y):
