@@ -59,6 +59,7 @@ class App:
         self.entry3 = Entry(self.root, textvariable=self.malig_prob, bd=5)
         self.entry3.pack(side=LEFT)
 
+    # 根据x，y绘制散点图
     @staticmethod
     def plot_subplot(subplot, x, y):
         x_zero = x[y == 0]
@@ -69,6 +70,7 @@ class App:
         subplot.set_xlabel('x1')
         subplot.set_ylabel('x2')
 
+    # 绘制一个点，坐标为X=(x1 ,x2)
     def plot_point(self, subplot, x):
         if self.last_line is not None:
             self.last_line.remove()
@@ -76,6 +78,15 @@ class App:
         lines = subplot.plot(x[:, 0], x[:, 1], "ro", label="case")
         self.last_line = lines.pop(0)
 
+    # 绘制超平面
+    @staticmethod
+    def plot_hyperplane(subplot, clf, min_x, max_x):
+        w = clf.coef_[0]
+        xx = np.linspace(min_x, max_x)
+        yy = -(w[0] * xx + clf.intercept_[0]) / w[1]
+        subplot.plot(xx, yy, "black")
+
+    # 根据滑动条数据（即特征数据）计算归属类别的概率
     def predict(self, trivial):
         x = np.arange(30, dtype='f').reshape((1, 30))
         for i in range(30):
@@ -87,13 +98,6 @@ class App:
 
     def run(self):
         self.root.mainloop()
-
-    @staticmethod
-    def plot_hyperplane(subplot, clf, min_x, max_x):
-        w = clf.coef_[0]
-        xx = np.linspace(min_x, max_x)
-        yy = -(w[0] * xx + clf.intercept_[0]) / w[1]
-        subplot.plot(xx, yy, "black")
 
 
 if __name__ == "__main__":
