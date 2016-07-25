@@ -41,7 +41,9 @@ class App:
         self.slides = [None] * feature_num
         for i in range(feature_num):
             Label(self.root, text="feature " + str(i)).pack(side=LEFT)
-            self.slides[i] = Scale(self.root, from_=np.min(x_origin[:, i]), to=np.max(x_origin[:, i]),
+            min_x = np.min(x_origin[:, i])
+            max_x = np.max(x_origin[:, i])
+            self.slides[i] = Scale(self.root, from_=min_x, to=max_x, resolution=(max_x - min_x) / 100.0,
                                    orient=HORIZONTAL, command=self.predict)
             self.slides[i].pack(side=LEFT)
 
@@ -56,7 +58,7 @@ class App:
         self.plot_subplot(self.subplot, x, y)
         minx = np.min(x[:, 0])
         maxx = np.max(x[:, 0])
-        plot_hyperplane(self.subplot, self.evaluator.get_clf(), minx, maxx)
+        self.plot_hyperplane(self.subplot, self.evaluator.get_clf(), minx, maxx)
         self.last_line = None
 
     @staticmethod
@@ -76,7 +78,7 @@ class App:
         lines = subplot.plot(x[:, 0], x[:, 1], "ro", label="case")
         self.last_line = lines.pop(0)
 
-    def predict(self, trival):
+    def predict(self, trivial):
         x = np.arange(30, dtype='f').reshape((1, 30))
         for i in range(30):
             x[0, i] = float(self.slides[i].get())
@@ -88,12 +90,12 @@ class App:
     def run(self):
         self.root.mainloop()
 
-
-def plot_hyperplane(subplot, clf, min_x, max_x):
-    w = clf.coef_[0]
-    xx = np.linspace(min_x, max_x)
-    yy = -(w[0] * xx + clf.intercept_[0]) / w[1]
-    subplot.plot(xx, yy, "black")
+    @staticmethod
+    def plot_hyperplane(subplot, clf, min_x, max_x):
+        w = clf.coef_[0]
+        xx = np.linspace(min_x, max_x)
+        yy = -(w[0] * xx + clf.intercept_[0]) / w[1]
+        subplot.plot(xx, yy, "black")
 
 
 if __name__ == "__main__":
