@@ -34,7 +34,7 @@ class App:
 
         # 2.matplotlib绘制和内嵌
         frame1 = Frame(self.root)
-        frame1.pack(fill=BOTH, expand=1, padx=5, pady=5)
+        frame1.pack(fill=BOTH, expand=1, padx=15, pady=15)
         self.figure = Figure(figsize=(5, 4), dpi=100)
         self.subplot = self.figure.add_subplot(111)
         self.plot_subplot(self.subplot, x, y)
@@ -45,7 +45,7 @@ class App:
         canvas = FigureCanvasTkAgg(self.figure, master=frame1)
         canvas.show()
         canvas.get_tk_widget().grid(row=0, column=0)
-        toolbar = NavigationToolbar2TkAgg(canvas, self.root)
+        toolbar = NavigationToolbar2TkAgg(canvas, frame1)
         toolbar.update()
         canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 
@@ -69,12 +69,12 @@ class App:
                          "concavity MAX", "concave MAX",
                          "symmetry MAX", "fractal MAX"]
         for i in range(feature_num):
-            canv.create_window(50, i * 50 + 10, window=Label(canv, text=feature_names[i]))
+            canv.create_window(50, (i+1) * 50, window=Label(canv, text=feature_names[i]))
             min_x = np.min(x_origin[:, i])
             max_x = np.max(x_origin[:, i])
             self.slides[i] = Scale(canv, from_=min_x, to=max_x, resolution=(max_x - min_x) / 100.0,
                                    orient=HORIZONTAL, command=self.predict)
-            canv.create_window(200, i * 50, window=self.slides[i])
+            canv.create_window(200, (i+1) * 50, window=self.slides[i])
 
         # 4.概率输出框
         self.malig_prob = StringVar()
