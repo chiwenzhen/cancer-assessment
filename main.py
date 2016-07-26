@@ -7,6 +7,7 @@ chiwenzhen
 """
 import numpy as np
 from Tkinter import *
+from ttk import Notebook
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 from model import *
@@ -25,16 +26,26 @@ class App:
         self.root = Tk()
         self.root.wm_title("Breast Cancer Evaluation Platform")
 
-        # 1.菜单
+
+        # 1.菜单和标签页
         menubar = Menu(self.root)  # 添加菜单
         self.root.config(menu=menubar)
         filemenu = Menu(menubar)
         filemenu.add_command(label="Exit", command=sys.exit)
         menubar.add_cascade(label="File", menu=filemenu)
 
+        notebook = Notebook(self.root)
+        notebook.pack(fill=BOTH)
+        first_page = Frame(notebook)
+        notebook.add(first_page, text="Main")
+        second_page = Frame(notebook)
+        notebook.add(second_page, text="Testing")
+        third_page = Frame(notebook)
+        notebook.add(third_page, text="ROC")
+
         # 2.matplotlib绘制和内嵌
-        frame1 = Frame(self.root)
-        frame1.pack(fill=BOTH, expand=1, padx=15, pady=15)
+        frame_mat = Frame(first_page)
+        frame_mat.pack(fill=BOTH, expand=1, padx=15, pady=15)
         self.figure = Figure(figsize=(5, 4), dpi=100)
         self.subplot = self.figure.add_subplot(111)
         self.plot_subplot(self.subplot, x, y)
@@ -42,18 +53,18 @@ class App:
         maxx = np.max(x[:, 0])
         self.plot_hyperplane(self.subplot, self.evaluator.get_clf(), minx, maxx)
         self.last_line = None
-        canvas = FigureCanvasTkAgg(self.figure, master=frame1)
+        canvas = FigureCanvasTkAgg(self.figure, master=frame_mat)
         canvas.show()
         canvas.get_tk_widget().grid(row=0, column=0)
-        toolbar = NavigationToolbar2TkAgg(canvas, frame1)
+        toolbar = NavigationToolbar2TkAgg(canvas, frame_mat)
         toolbar.update()
         canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 
         # 3.滑动条
-        frame2 = Frame(self.root)
-        frame2.pack(fill=BOTH, expand=1, padx=5, pady=5)
-        canv = Canvas(frame2, relief=SUNKEN)
-        vbar = Scrollbar(frame2, command=canv.yview)
+        frame_scale = Frame(first_page)
+        frame_scale.pack(fill=BOTH, expand=1, padx=5, pady=5)
+        canv = Canvas(frame_scale, relief=SUNKEN)
+        vbar = Scrollbar(frame_scale, command=canv.yview)
         canv.config(scrollregion=(0, 0, 300, 1500))
         canv.config(yscrollcommand=vbar.set)
         vbar.pack(side=RIGHT, fill=Y)
@@ -77,9 +88,11 @@ class App:
             canv.create_window(200, (i+1) * 50, window=self.slides[i])
 
         # 4.概率输出框
+        frame_output = Frame(first_page)
+        frame_output.pack(fill=BOTH, expand=1, padx=5, pady=5)
         self.malig_prob = StringVar()
-        Label(self.root, text="恶性肿瘤概率").pack(side=LEFT)
-        Entry(self.root, textvariable=self.malig_prob, bd=5).pack(side=LEFT, padx=5, pady=5)
+        Label(frame_output, text="恶性肿瘤概率").pack(side=LEFT)
+        Entry(frame_output, textvariable=self.malig_prob, bd=5).pack(side=LEFT, padx=5, pady=5)
 
     # 根据x,y，绘制散点图
     @staticmethod
