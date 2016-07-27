@@ -14,6 +14,9 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder
 from sklearn.cross_validation import train_test_split
 from sklearn.externals import joblib
+from sklearn.metrics import roc_curve, auc
+from scipy import interp
+from sklearn.svm import LinearSVC
 
 
 class LREvaluator:
@@ -24,7 +27,8 @@ class LREvaluator:
         self.y_test = None
         self.scaler = StandardScaler()
         self.pca = PCA(n_components=2)
-        self.clf = LogisticRegression(penalty='l2', random_state=1)
+        # self.clf = LogisticRegression(penalty='l2', random_state=1)
+        self.clf = LogisticRegression(random_state=1)
         self.estimators = [('scl', self.scaler), ('pca', self.pca), ('clf', self.clf)]
         self.pipeline = Pipeline(self.estimators)  # 可以通过pipe.named_steps['pca']来访问PCA对象
 
@@ -57,8 +61,6 @@ class LREvaluator:
 
     # 输入降维后特征进行分类
     def predict_r(self, x):
-        x = self.scaler.transform(x)
-        x = self.pca.transform(x)
         return self.clf.predict_proba(x), x
 
     # 特征降维
@@ -71,6 +73,10 @@ class LREvaluator:
     def get_train_data(self):
         return self.x_train, self.y_train
 
+    # 获取测试数据
+    def get_test_data(self):
+        return self.x_test, self.y_test
+
     # 获取流水线评估器
     def get_pipeline(self):
         return self.pipeline
@@ -78,22 +84,11 @@ class LREvaluator:
 
 # 载入数据
 class DataSet:
-    def __init__(self):
-        self.x = None
-        self.y = None
-
-    def load_data(self, data_path="wdbc.data"):
+    def __init__(self, data_path, test_percent=0.2):
         df = pd.read_csv(data_path, header=None)
         self.x = df.loc[:, 2:].values  # 训练集特征
         y = df.loc[:, 1].values  # 训练集标签
         le = LabelEncoder()
         self.y = le.fit_transform(y)  # 把字符串标签转换为整数，恶性M-1，良性B-0
-
-    def get_data(self):
-        return self.x, self.y
-
-    def get_data_x(self):
-        return self.x
-
-    def get_data_y(self):
-        return self.y
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=test_percent,
+                                                                                random_state=1)  # 拆分成训练集(80%)和测试集(20%)

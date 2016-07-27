@@ -6,27 +6,37 @@ chiwenzhen
 
 """
 import numpy as np
-from Tkinter import *
+import sys
+from Tkinter import Tk, Menu, Frame, BOTH, TOP, LEFT, RIGHT, Label, Entry, StringVar, Canvas, Scrollbar, SUNKEN
+from Tkinter import YES, Y, Scale, HORIZONTAL
 from ttk import Notebook
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
 from model import *
 from sklearn.learning_curve import learning_curve
 from sklearn.learning_curve import validation_curve
+from sklearn.cross_validation import StratifiedKFold
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import precision_score, recall_score, f1_score
+import matplotlib.pyplot as plt
 
 
 class App:
     def __init__(self, root):
-        # 分类器训练
-        self.dataset = DataSet()
-        self.dataset.load_data(data_path="wdbc.data")
-        x, y = self.dataset.get_data()
+        # 数据载入和分类器训练
+        self.dataset = DataSet(data_path="wdbc.data")
+        x = self.dataset.x
+        y = self.dataset.y
+        x_train = self.dataset.x_train
+        y_train = self.dataset.y_train
+        x_test = self.dataset.x_test
+        y_test = self.dataset.y_test
 
         self.evaluator = LREvaluator()
         self.evaluator.load_data(x, y)
         self.evaluator.train()
-        x, y = self.evaluator.get_train_data()
-        x_r = self.evaluator.reduce(x)  # 特征降维
+        x_train_r = self.evaluator.reduce(x_train)  # 特征降维
+        x_test_r = self.evaluator.reduce(x_test)  # 特征降维
 
         # 初始化UI
         # 1.菜单和标签页
@@ -43,13 +53,13 @@ class App:
         notebook.add(first_page, text="主页")
 
         second_page = Frame(notebook)
-        notebook.add(second_page, text="学习曲线")
+        # notebook.add(second_page, text="学习曲线")
 
         third_page = Frame(notebook)
-        notebook.add(third_page, text="验证曲线")
+        # notebook.add(third_page, text="验证曲线")
 
         fourth_page = Frame(notebook)
-        notebook.add(fourth_page, text="ROC")
+        # notebook.add(fourth_page, text="ROC")
 
         fifth_page = Frame(notebook)
         notebook.add(fifth_page, text="测试结果")
@@ -59,12 +69,14 @@ class App:
         frame_x_y.pack(fill=BOTH, expand=1, padx=15, pady=15)
         self.figure = Figure(figsize=(5, 4), dpi=100)
         self.subplot = self.figure.add_subplot(111)
-        self.plot_subplot(self.subplot, x_r, y)  # 绘制数据散点
-        minx = np.min(x_r[:, 0])
-        maxx = np.max(x_r[:, 0])
+        self.subplot.set_title('Breast Cancer Evaluation Model')
+        self.plot_subplot(self.subplot, x_train_r, y_train)  # 绘制数据散点
+        minx = np.min(x_train_r[:, 0])
+        maxx = np.max(x_train_r[:, 0])
         self.plot_hyperplane(self.subplot, self.evaluator.get_clf(), minx, maxx)  # 绘制超平面
         self.last_line = None
         canvas = FigureCanvasTkAgg(self.figure, master=frame_x_y)  # 内嵌散点图到UI
+        self.figure.tight_layout()
         canvas.show()
         canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         toolbar = NavigationToolbar2TkAgg(canvas, frame_x_y)  # 内嵌散点图工具栏到UI
@@ -87,7 +99,7 @@ class App:
         canv.config(yscrollcommand=vbar.set)
         vbar.pack(side=RIGHT, fill=Y)
         canv.pack(side=LEFT, expand=YES, fill=BOTH)
-        feature_num = x.shape[1]
+        feature_num = x_train.shape[1]
         self.slides = [None] * feature_num  # 滑动条个数为特征个数
         feature_names = ["radius", "texture", "perimeter", "area", "smoothness", "compactness", "concavity", "concave",
                          "symmetry", "fractal",
@@ -99,8 +111,8 @@ class App:
                          "symmetry MAX", "fractal MAX"]
         for i in range(feature_num):
             canv.create_window(60, (i + 1) * 40, window=Label(canv, text=feature_names[i]))
-            min_x = np.min(x[:, i])
-            max_x = np.max(x[:, i])
+            min_x = np.min(x_train[:, i])
+            max_x = np.max(x_train[:, i])
             self.slides[i] = Scale(canv, from_=min_x, to=max_x, resolution=(max_x - min_x) / 100.0,
                                    orient=HORIZONTAL, command=self.predict)
             canv.create_window(200, (i + 1) * 40, window=self.slides[i])
@@ -108,8 +120,8 @@ class App:
         # second_page 1.学习曲线
         evaluator_lcurve = LREvaluator()
         train_sizes, train_scores, test_scores = learning_curve(estimator=evaluator_lcurve.get_pipeline(),
-                                                                X=self.dataset.get_data_x(),
-                                                                y=self.dataset.get_data_y(),
+                                                                X=x,
+                                                                y=y,
                                                                 train_sizes=np.linspace(0.1, 1.0, 10), cv=10, n_jobs=1)
 
         train_mean = np.mean(train_scores, axis=1)
@@ -145,7 +157,7 @@ class App:
         evaluator_vcurve = LREvaluator()
         param_range = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
         train_scores, test_scores = validation_curve(estimator=evaluator_vcurve.get_pipeline(),
-                                                     X=self.dataset.get_data_x(), y=self.dataset.get_data_y(),
+                                                     X=self.dataset.x, y=self.dataset.y,
                                                      param_name='clf__C',
                                                      param_range=param_range, cv=10)
 
@@ -181,14 +193,103 @@ class App:
         toolbar.update()
         canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 
+        # fourth_page ROC&AUC
+        evaluator_roc = LREvaluator()
+        frame_roc = Frame(fourth_page)
+        frame_roc.pack(fill='x', expand=1, padx=15, pady=15)
+        cv = StratifiedKFold(y_train, n_folds=3, random_state=1)
+        self.figure_roc = Figure(figsize=(6, 6), dpi=100)
+        self.subplot_roc = self.figure_roc.add_subplot(111)
+
+        mean_tpr = 0.0
+        mean_fpr = np.linspace(0, 1, 100)
+
+        for i, (train, test) in enumerate(cv):
+            evaluator_roc.load_data(x_train, y_train)
+            probas = evaluator_roc.get_pipeline().fit(x_train[train], y_train[train]).predict_proba(x_train[test])
+            fpr, tpr, thresholds = roc_curve(y_train[test], probas[:, 1], pos_label=1)
+            mean_tpr += interp(mean_fpr, fpr, tpr)
+            mean_tpr[0] = 0.0
+            roc_auc = auc(fpr, tpr)
+            self.subplot_roc.plot(fpr, tpr, linewidth=1, label='ROC fold %d (area = %0.2f)' % (i + 1, roc_auc))
+
+        self.subplot_roc.plot([0, 1], [0, 1], linestyle='--', color=(0.6, 0.6, 0.6), label='random guessing')
+
+        mean_tpr /= len(cv)
+        mean_tpr[-1] = 1.0
+        mean_auc = auc(mean_fpr, mean_tpr)
+        self.subplot_roc.plot(mean_fpr, mean_tpr, 'k--', label='mean ROC (area = %0.2f)' % mean_auc, lw=2)
+        # plot perfect performance line
+        self.subplot_roc.plot([0, 0, 1], [0, 1, 1], lw=2, linestyle=':', color='black', label='perfect performance')
+        # 设置x，y坐标范围
+        self.subplot_roc.set_xlim([-0.05, 1.05])
+        self.subplot_roc.set_ylim([-0.05, 1.05])
+        self.subplot_roc.set_xlabel('false positive rate')
+        self.subplot_roc.set_ylabel('true positive rate')
+        self.subplot_roc.set_title('Receiver Operator Characteristic')
+        self.subplot_roc.legend(loc="lower right")
+
+        canvas = FigureCanvasTkAgg(self.figure_roc, master=frame_roc)  # 内嵌散点图到UI
+        canvas.show()
+        canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        toolbar = NavigationToolbar2TkAgg(canvas, frame_roc)  # 内嵌散点图工具栏到UI
+        toolbar.update()
+        canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+
+        # ffifth_page 1.测试集展示
+        frame_test = Frame(fifth_page)
+        frame_test.pack(fill='x', expand=1, padx=15, pady=15)
+        self.figure_test = Figure(figsize=(4, 4), dpi=100)
+        self.subplot_test = self.figure_test.add_subplot(111)
+        self.subplot_test.set_title('Breast Cancer Testing')
+        self.plot_subplot(self.subplot_test, x_test_r, y_test)  # 绘制数据散点
+        minx = np.min(x_test_r[:, 0])
+        maxx = np.max(x_test_r[:, 0])
+        self.plot_hyperplane(self.subplot_test, self.evaluator.get_clf(), minx, maxx)  # 绘制超平面
+        canvas = FigureCanvasTkAgg(self.figure_test, master=frame_test)  # 内嵌散点图到UI
+        self.figure_test.tight_layout()
+        canvas.show()
+        canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        toolbar = NavigationToolbar2TkAgg(canvas, frame_test)  # 内嵌散点图工具栏到UI
+        toolbar.update()
+        canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+
+        # first_page 2.测试性能指标 precision recall f_value
+        y_pred = self.evaluator.get_pipeline().predict(x_test)
+        frame_matrix = Frame(fifth_page)
+        frame_matrix.pack(side=LEFT, fill='x', expand=1, padx=15, pady=15)
+        self.figure_matrix = Figure(figsize=(4, 4), dpi=100)
+        self.subplot_matrix = self.figure_matrix.add_subplot(111)
+
+        confmat = confusion_matrix(y_true=y_test, y_pred=y_pred)
+        self.subplot_matrix.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
+        for i in range(confmat.shape[0]):
+            for j in range(confmat.shape[1]):
+                self.subplot_matrix.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
+
+        self.subplot_matrix.set_xlabel('predicted label')
+        self.subplot_matrix.set_ylabel('true label')
+
+        canvas = FigureCanvasTkAgg(self.figure_matrix, master=frame_matrix)  # 内嵌散点图到UI
+        self.figure_matrix.tight_layout()
+        canvas.show()
+        canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+
+        frame_result = Frame(fifth_page)
+        frame_result.pack(side=LEFT, fill='x', expand=1, padx=15, pady=15)
+        Label(frame_result, text="平均正确率: " + str(self.evaluator.get_pipeline().score(x_test, y_test))).pack()
+        Label(frame_result, text="精确率: " + str(precision_score(y_true=y_test, y_pred=y_pred))).pack()
+        Label(frame_result, text="召回率: " + str(recall_score(y_true=y_test, y_pred=y_pred))).pack()
+        Label(frame_result, text="F值: " + str(f1_score(y_true=y_test, y_pred=y_pred))).pack()
+
     # 根据x,y，绘制散点图
     @staticmethod
     def plot_subplot(subplot, x, y):
         x_zero = x[y == 0]
         x_one = x[y == 1]
-        subplot.plot(x_zero[:, 0], x_zero[:, 1], "g.", label="benign")
-        subplot.plot(x_one[:, 0], x_one[:, 1], "k.", label="malignant")
-        subplot.set_title('Model Illustration')
+        subplot.plot(x_zero[:, 0], x_zero[:, 1], "g.", label='benign')
+        subplot.plot(x_one[:, 0], x_one[:, 1], "k.", label='malignant')
         subplot.set_xlabel('x1')
         subplot.set_ylabel('x2')
 
@@ -222,7 +323,7 @@ class App:
 if __name__ == "__main__":
     master = Tk()
     master.wm_title("Breast Cancer Evaluation Platform")
-    master.geometry('900x700')
-    master.iconbitmap("cancer2.ico")
+    master.geometry('900x750')
+    master.iconbitmap("cancer.ico")
     app = App(master)
     master.mainloop()
