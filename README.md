@@ -1,2 +1,2 @@
 # cancer-assessment
-cancer assessment (benign or malignant) using machine learning algorithm
+breast cancer assessment (benign or malignant) using machine learning algorithm. We use data "Breast Cancer Wisconsin (Diagnostic) Data Set" that is available at http://archive.ics.uci.edu/ml/datasets/Breast+Cancer+Wisconsin+%28Diagnostic%29
