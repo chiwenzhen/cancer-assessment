@@ -7,7 +7,7 @@ chiwenzhen
 """
 import numpy as np
 import sys
-from Tkinter import Tk, Menu, Frame, BOTH, TOP, LEFT, RIGHT, Label, Entry, StringVar, Canvas, Scrollbar, SUNKEN
+from Tkinter import Tk, Menu, Frame, BOTH, TOP, LEFT, RIGHT, Label, Entry, StringVar, Canvas, Scrollbar, SUNKEN, W
 from Tkinter import YES, Y, Scale, HORIZONTAL
 from ttk import Notebook
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
@@ -32,7 +32,7 @@ class App:
         x_test = self.dataset.x_test
         y_test = self.dataset.y_test
 
-        self.evaluator = LREvaluator()
+        self.evaluator = CancerEvaluator()
         self.evaluator.load_data(x, y)
         self.evaluator.train()
         x_train_r = self.evaluator.reduce(x_train)  # 特征降维
@@ -50,19 +50,19 @@ class App:
         notebook.pack(fill=BOTH)
 
         first_page = Frame(notebook)
-        notebook.add(first_page, text="主页")
+        notebook.add(first_page, text="Main")
 
         second_page = Frame(notebook)
-        # notebook.add(second_page, text="学习曲线")
+        # notebook.add(second_page, text="Learning Curve")
 
         third_page = Frame(notebook)
-        # notebook.add(third_page, text="验证曲线")
+        # notebook.add(third_page, text="Validation Curve")
 
         fourth_page = Frame(notebook)
-        # notebook.add(fourth_page, text="ROC")
+        # notebook.add(fourth_page, text="ROC & AUC")
 
         fifth_page = Frame(notebook)
-        notebook.add(fifth_page, text="测试结果")
+        notebook.add(fifth_page, text="Testing Result")
 
         # first_page 1.matplotlib绘制
         frame_x_y = Frame(first_page)
@@ -87,8 +87,11 @@ class App:
         frame_output = Frame(first_page)
         frame_output.pack(fill=BOTH, expand=1, padx=5, pady=5)
         self.malig_prob = StringVar()
-        Label(frame_output, text="恶性肿瘤概率").pack(side=LEFT)
+        Label(frame_output, text="malignant prob").pack(side=LEFT)
         Entry(frame_output, textvariable=self.malig_prob, bd=5).pack(side=LEFT, padx=5, pady=5)
+        Label(frame_output, text="hyperplane： %.4f*x1 + %.4f*x2 + %.4f = 0" % (
+        self.evaluator.get_clf().coef_[0, 0], self.evaluator.get_clf().coef_[0, 1],
+        self.evaluator.get_clf().intercept_)).pack(side=RIGHT)
 
         # first_page 3.滑动条
         frame_scale = Frame(first_page)
@@ -118,7 +121,7 @@ class App:
             canv.create_window(200, (i + 1) * 40, window=self.slides[i])
 
         # second_page 1.学习曲线
-        evaluator_lcurve = LREvaluator()
+        evaluator_lcurve = CancerEvaluator()
         train_sizes, train_scores, test_scores = learning_curve(estimator=evaluator_lcurve.get_pipeline(),
                                                                 X=x,
                                                                 y=y,
@@ -154,7 +157,7 @@ class App:
         canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 
         # third_page 验证曲线
-        evaluator_vcurve = LREvaluator()
+        evaluator_vcurve = CancerEvaluator()
         param_range = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
         train_scores, test_scores = validation_curve(estimator=evaluator_vcurve.get_pipeline(),
                                                      X=self.dataset.x, y=self.dataset.y,
@@ -194,7 +197,7 @@ class App:
         canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
 
         # fourth_page ROC&AUC
-        evaluator_roc = LREvaluator()
+        evaluator_roc = CancerEvaluator()
         frame_roc = Frame(fourth_page)
         frame_roc.pack(fill='x', expand=1, padx=15, pady=15)
         cv = StratifiedKFold(y_train, n_folds=3, random_state=1)
@@ -219,9 +222,7 @@ class App:
         mean_tpr[-1] = 1.0
         mean_auc = auc(mean_fpr, mean_tpr)
         self.subplot_roc.plot(mean_fpr, mean_tpr, 'k--', label='mean ROC (area = %0.2f)' % mean_auc, lw=2)
-        # plot perfect performance line
         self.subplot_roc.plot([0, 0, 1], [0, 1, 1], lw=2, linestyle=':', color='black', label='perfect performance')
-        # 设置x，y坐标范围
         self.subplot_roc.set_xlim([-0.05, 1.05])
         self.subplot_roc.set_ylim([-0.05, 1.05])
         self.subplot_roc.set_xlabel('false positive rate')
@@ -278,10 +279,15 @@ class App:
 
         frame_result = Frame(fifth_page)
         frame_result.pack(side=LEFT, fill='x', expand=1, padx=15, pady=15)
-        Label(frame_result, text="平均正确率: " + str(self.evaluator.get_pipeline().score(x_test, y_test))).pack()
-        Label(frame_result, text="精确率: " + str(precision_score(y_true=y_test, y_pred=y_pred))).pack()
-        Label(frame_result, text="召回率: " + str(recall_score(y_true=y_test, y_pred=y_pred))).pack()
-        Label(frame_result, text="F值: " + str(f1_score(y_true=y_test, y_pred=y_pred))).pack()
+        Label(frame_result, text="Accuracy: ").grid(row=0, column=0, sticky=W)
+        Label(frame_result, text=str(self.evaluator.get_pipeline().score(x_test, y_test))).grid(row=0, column=1,
+                                                                                                sticky=W)
+        Label(frame_result, text="Precision: ").grid(row=1, column=0, sticky=W)
+        Label(frame_result, text=str(precision_score(y_true=y_test, y_pred=y_pred))).grid(row=1, column=1, sticky=W)
+        Label(frame_result, text="Recall: ").grid(row=2, column=0, sticky=W)
+        Label(frame_result, text=str(recall_score(y_true=y_test, y_pred=y_pred))).grid(row=2, column=1, sticky=W)
+        Label(frame_result, text="F-value: ").grid(row=3, column=0, sticky=W)
+        Label(frame_result, text=str(f1_score(y_true=y_test, y_pred=y_pred))).grid(row=3, column=1, sticky=W)
 
     # 根据x,y，绘制散点图
     @staticmethod
@@ -292,6 +298,7 @@ class App:
         subplot.plot(x_one[:, 0], x_one[:, 1], "k.", label='malignant')
         subplot.set_xlabel('x1')
         subplot.set_ylabel('x2')
+        subplot.legend(loc='lower right')
 
     # 删除上一个点，再根据坐标X=(x1 ,x2)重绘绘制一个点，以实现点的移动
     def plot_point(self, subplot, x):
@@ -300,6 +307,7 @@ class App:
             del self.last_line
         lines = subplot.plot(x[:, 0], x[:, 1], "ro", label="case")
         self.last_line = lines.pop(0)
+        subplot.legend(loc='lower right')
 
     # 根据clf给出的系数，绘制超平面
     @staticmethod
