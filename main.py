@@ -8,8 +8,7 @@ chiwenzhen
 import numpy as np
 import sys
 
-from Tkinter import Tk, Menu, Frame, BOTH, TOP, LEFT, RIGHT, Label, Entry, StringVar, Canvas, Scrollbar, SUNKEN, W
-from Tkinter import YES, Y, Scale, HORIZONTAL
+import Tkinter as TK
 from ttk import Notebook
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
@@ -20,6 +19,7 @@ from sklearn.cross_validation import StratifiedKFold
 from sklearn.metrics import confusion_matrix, roc_curve, auc
 from sklearn.metrics import precision_score, recall_score, f1_score
 import matplotlib.pyplot as plt
+from scipy import interp
 
 
 class App:
@@ -41,33 +41,33 @@ class App:
 
         # 初始化UI
         # 1.菜单和标签页
-        menubar = Menu(root)  # 添加菜单
+        menubar = TK.Menu(root)  # 添加菜单
         root.config(menu=menubar)
-        filemenu = Menu(menubar)
+        filemenu = TK.Menu(menubar)
         filemenu.add_command(label="Exit", command=sys.exit)
         menubar.add_cascade(label="File", menu=filemenu)
 
         notebook = Notebook(root)  # 添加标签页
-        notebook.pack(fill=BOTH)
+        notebook.pack(fill=TK.BOTH)
 
-        first_page = Frame(notebook)
+        first_page = TK.Frame(notebook)
         notebook.add(first_page, text="Main")
 
-        second_page = Frame(notebook)
+        second_page = TK.Frame(notebook)
         notebook.add(second_page, text="Learning Curve")
 
-        third_page = Frame(notebook)
+        third_page = TK.Frame(notebook)
         notebook.add(third_page, text="Validation Curve")
 
-        fourth_page = Frame(notebook)
+        fourth_page = TK.Frame(notebook)
         notebook.add(fourth_page, text="ROC & AUC")
 
-        fifth_page = Frame(notebook)
+        fifth_page = TK.Frame(notebook)
         notebook.add(fifth_page, text="Testing Result")
 
         # first_page 1.matplotlib绘制
-        frame_x_y = Frame(first_page)
-        frame_x_y.pack(fill=BOTH, expand=1, padx=15, pady=15)
+        frame_x_y = TK.Frame(first_page)
+        frame_x_y.pack(fill=TK.BOTH, expand=1, padx=15, pady=15)
         self.figure = Figure(figsize=(5, 4), dpi=100)
         self.subplot = self.figure.add_subplot(111)
         self.subplot.set_title('Breast Cancer Evaluation Model')
@@ -79,30 +79,30 @@ class App:
         canvas = FigureCanvasTkAgg(self.figure, master=frame_x_y)  # 内嵌散点图到UI
         self.figure.tight_layout()
         canvas.show()
-        canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
         toolbar = NavigationToolbar2TkAgg(canvas, frame_x_y)  # 内嵌散点图工具栏到UI
         toolbar.update()
-        canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
 
         # first_page 2.概率输出框
-        frame_output = Frame(first_page)
-        frame_output.pack(fill=BOTH, expand=1, padx=5, pady=5)
-        self.malig_prob = StringVar()
-        Label(frame_output, text="malignant prob").pack(side=LEFT)
-        Entry(frame_output, textvariable=self.malig_prob, bd=5).pack(side=LEFT, padx=5, pady=5)
-        Label(frame_output, text="hyperplane： %.4f*x1 + %.4f*x2 + %.4f = 0" % (
+        frame_output = TK.Frame(first_page)
+        frame_output.pack(fill=TK.BOTH, expand=1, padx=5, pady=5)
+        self.malig_prob = TK.StringVar()
+        TK.Label(frame_output, text="malignant prob").pack(side=TK.LEFT)
+        TK.Entry(frame_output, textvariable=self.malig_prob, bd=5).pack(side=TK.LEFT, padx=5, pady=5)
+        TK.Label(frame_output, text="hyperplane： %.4f*x1 + %.4f*x2 + %.4f = 0" % (
         self.evaluator.get_clf().coef_[0, 0], self.evaluator.get_clf().coef_[0, 1],
-        self.evaluator.get_clf().intercept_)).pack(side=RIGHT)
+        self.evaluator.get_clf().intercept_)).pack(side=TK.RIGHT)
 
         # first_page 3.滑动条
-        frame_scale = Frame(first_page)
-        frame_scale.pack(fill=BOTH, expand=1, padx=5, pady=5)
-        canv = Canvas(frame_scale, relief=SUNKEN)
-        vbar = Scrollbar(frame_scale, command=canv.yview)
+        frame_scale = TK.Frame(first_page)
+        frame_scale.pack(fill=TK.BOTH, expand=1, padx=5, pady=5)
+        canv = TK.Canvas(frame_scale, relief=TK.SUNKEN)
+        vbar = TK.Scrollbar(frame_scale, command=canv.yview)
         canv.config(scrollregion=(0, 0, 300, 1500))
         canv.config(yscrollcommand=vbar.set)
-        vbar.pack(side=RIGHT, fill=Y)
-        canv.pack(side=LEFT, expand=YES, fill=BOTH)
+        vbar.pack(side=TK.RIGHT, fill=TK.Y)
+        canv.pack(side=TK.LEFT, expand=TK.YES, fill=TK.BOTH)
         feature_num = x_train.shape[1]
         self.slides = [None] * feature_num  # 滑动条个数为特征个数
         feature_names = ["radius", "texture", "perimeter", "area", "smoothness", "compactness", "concavity", "concave",
@@ -114,25 +114,25 @@ class App:
                          "concavity MAX", "concave MAX",
                          "symmetry MAX", "fractal MAX"]
         for i in range(feature_num):
-            canv.create_window(60, (i + 1) * 40, window=Label(canv, text=str(i+1) + ". " + feature_names[i]))
+            canv.create_window(60, (i + 1) * 40, window=TK.Label(canv, text=str(i+1) + ". " + feature_names[i]))
             min_x = np.min(x_train[:, i])
             max_x = np.max(x_train[:, i])
-            self.slides[i] = Scale(canv, from_=min_x, to=max_x, resolution=(max_x - min_x) / 100.0,
-                                   orient=HORIZONTAL, command=self.predict)
+            self.slides[i] = TK.Scale(canv, from_=min_x, to=max_x, resolution=(max_x - min_x) / 100.0,
+                                   orient=TK.HORIZONTAL, command=self.predict)
             canv.create_window(200, (i + 1) * 40, window=self.slides[i])
 
         # second_page 1.学习曲线
         evaluator_lcurve = CancerEvaluator()
         train_sizes, train_scores, test_scores = learning_curve(estimator=evaluator_lcurve.get_pipeline(),
-                                                                X=x,
-                                                                y=y,
+                                                                X=x_train,
+                                                                y=y_train,
                                                                 train_sizes=np.linspace(0.1, 1.0, 10), cv=10, n_jobs=1)
 
         train_mean = np.mean(train_scores, axis=1)
         train_std = np.std(train_scores, axis=1)
         test_mean = np.mean(test_scores, axis=1)
         test_std = np.std(test_scores, axis=1)
-        frame_lcurve = Frame(second_page)
+        frame_lcurve = TK.Frame(second_page)
         frame_lcurve.pack(fill='x', expand=1, padx=15, pady=15)
         self.figure_lcurve = Figure(figsize=(6, 6), dpi=100)
         self.subplot_lcurve = self.figure_lcurve.add_subplot(111)
@@ -141,7 +141,7 @@ class App:
         self.subplot_lcurve.fill_between(train_sizes, train_mean + train_std, train_mean - train_std, alpha=0.15,
                                          color='blue')
         self.subplot_lcurve.plot(train_sizes, test_mean, color='green', linestyle='--', marker='s', markersize=5,
-                                 label='testing accuracy')
+                                 label='cross-validation accuracy')
         self.subplot_lcurve.fill_between(train_sizes, test_mean + test_std, test_mean - test_std, alpha=0.15,
                                          color='green')
         self.subplot_lcurve.grid()
@@ -152,16 +152,16 @@ class App:
         canvas = FigureCanvasTkAgg(self.figure_lcurve, master=frame_lcurve)  # 内嵌散点图到UI
         
         canvas.show()
-        canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
         toolbar = NavigationToolbar2TkAgg(canvas, frame_lcurve)  # 内嵌散点图工具栏到UI
         toolbar.update()
-        canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
 
         # third_page 验证曲线
         evaluator_vcurve = CancerEvaluator()
-        param_range = [0.001, 0.01, 0.1, 1.0, 10.0, 100.0]
+        param_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
         train_scores, test_scores = validation_curve(estimator=evaluator_vcurve.get_pipeline(),
-                                                     X=self.dataset.x, y=self.dataset.y,
+                                                     X=x_train, y=y_train,
                                                      param_name='clf__C',
                                                      param_range=param_range, cv=10)
 
@@ -170,7 +170,7 @@ class App:
         test_mean = np.mean(test_scores, axis=1)
         test_std = np.std(test_scores, axis=1)
 
-        frame_vcurve = Frame(third_page)
+        frame_vcurve = TK.Frame(third_page)
         frame_vcurve.pack(fill='x', expand=1, padx=15, pady=15)
         self.figure_vcurve = Figure(figsize=(6, 6), dpi=100)
         self.subplot_vcurve = self.figure_vcurve.add_subplot(111)
@@ -180,7 +180,7 @@ class App:
         self.subplot_vcurve.fill_between(param_range, train_mean + train_std, train_mean - train_std, alpha=0.15,
                                          color='blue')
         self.subplot_vcurve.plot(param_range, test_mean, color='green', linestyle='--', marker='s', markersize=5,
-                                 label='testing accuracy')
+                                 label='cross-validation accuracy')
         self.subplot_vcurve.fill_between(param_range, test_mean + test_std, test_mean - test_std, alpha=0.15,
                                          color='green')
 
@@ -192,14 +192,14 @@ class App:
         self.subplot_vcurve.set_ylim([0.91, 1.0])
         canvas = FigureCanvasTkAgg(self.figure_vcurve, master=frame_vcurve)  # 内嵌散点图到UI
         canvas.show()
-        canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
         toolbar = NavigationToolbar2TkAgg(canvas, frame_vcurve)  # 内嵌散点图工具栏到UI
         toolbar.update()
-        canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
 
         # fourth_page ROC&AUC
         evaluator_roc = CancerEvaluator()
-        frame_roc = Frame(fourth_page)
+        frame_roc = TK.Frame(fourth_page)
         frame_roc.pack(fill='x', expand=1, padx=15, pady=15)
         cv = StratifiedKFold(y_train, n_folds=3, random_state=1)
         self.figure_roc = Figure(figsize=(6, 6), dpi=100)
@@ -233,13 +233,13 @@ class App:
 
         canvas = FigureCanvasTkAgg(self.figure_roc, master=frame_roc)  # 内嵌散点图到UI
         canvas.show()
-        canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
         toolbar = NavigationToolbar2TkAgg(canvas, frame_roc)  # 内嵌散点图工具栏到UI
         toolbar.update()
-        canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
 
         # ffifth_page 1.测试集展示
-        frame_test = Frame(fifth_page)
+        frame_test = TK.Frame(fifth_page)
         frame_test.pack(fill='x', expand=1, padx=15, pady=15)
         self.figure_test = Figure(figsize=(4, 4), dpi=100)
         self.subplot_test = self.figure_test.add_subplot(111)
@@ -251,15 +251,15 @@ class App:
         canvas = FigureCanvasTkAgg(self.figure_test, master=frame_test)  # 内嵌散点图到UI
         self.figure_test.tight_layout()
         canvas.show()
-        canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
+        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
         toolbar = NavigationToolbar2TkAgg(canvas, frame_test)  # 内嵌散点图工具栏到UI
         toolbar.update()
-        canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
 
         # first_page 2.测试性能指标 precision recall f_value
         y_pred = self.evaluator.get_pipeline().predict(x_test)
-        frame_matrix = Frame(fifth_page)
-        frame_matrix.pack(side=LEFT, fill='x', expand=1, padx=15, pady=15)
+        frame_matrix = TK.Frame(fifth_page)
+        frame_matrix.pack(side=TK.LEFT, fill='x', expand=1, padx=15, pady=15)
         self.figure_matrix = Figure(figsize=(4, 4), dpi=100)
         self.subplot_matrix = self.figure_matrix.add_subplot(111)
 
@@ -275,20 +275,20 @@ class App:
         canvas = FigureCanvasTkAgg(self.figure_matrix, master=frame_matrix)  # 内嵌散点图到UI
         self.figure_matrix.tight_layout()
         canvas.show()
-        canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
-        canvas.tkcanvas.pack(side=TOP, fill=BOTH, expand=1)
+        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
+        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
 
-        frame_result = Frame(fifth_page)
-        frame_result.pack(side=LEFT, fill='x', expand=1, padx=15, pady=15)
-        Label(frame_result, text="Accuracy: ").grid(row=0, column=0, sticky=W)
-        Label(frame_result, text=str(self.evaluator.get_pipeline().score(x_test, y_test))).grid(row=0, column=1,
-                                                                                                sticky=W)
-        Label(frame_result, text="Precision: ").grid(row=1, column=0, sticky=W)
-        Label(frame_result, text=str(precision_score(y_true=y_test, y_pred=y_pred))).grid(row=1, column=1, sticky=W)
-        Label(frame_result, text="Recall: ").grid(row=2, column=0, sticky=W)
-        Label(frame_result, text=str(recall_score(y_true=y_test, y_pred=y_pred))).grid(row=2, column=1, sticky=W)
-        Label(frame_result, text="F-value: ").grid(row=3, column=0, sticky=W)
-        Label(frame_result, text=str(f1_score(y_true=y_test, y_pred=y_pred))).grid(row=3, column=1, sticky=W)
+        frame_result = TK.Frame(fifth_page)
+        frame_result.pack(side=TK.LEFT, fill='x', expand=1, padx=15, pady=15)
+        TK.Label(frame_result, text="Accuracy: ").grid(row=0, column=0, sticky=TK.W)
+        TK.Label(frame_result, text=str(self.evaluator.get_pipeline().score(x_test, y_test))).grid(row=0, column=1,
+                                                                                                sticky=TK.W)
+        TK.Label(frame_result, text="Precision: ").grid(row=1, column=0, sticky=TK.W)
+        TK.Label(frame_result, text=str(precision_score(y_true=y_test, y_pred=y_pred))).grid(row=1, column=1, sticky=TK.W)
+        TK.Label(frame_result, text="Recall: ").grid(row=2, column=0, sticky=TK.W)
+        TK.Label(frame_result, text=str(recall_score(y_true=y_test, y_pred=y_pred))).grid(row=2, column=1, sticky=TK.W)
+        TK.Label(frame_result, text="F-value: ").grid(row=3, column=0, sticky=TK.W)
+        TK.Label(frame_result, text=str(f1_score(y_true=y_test, y_pred=y_pred))).grid(row=3, column=1, sticky=TK.W)
 
     # 根据x,y，绘制散点图
     @staticmethod
@@ -330,7 +330,7 @@ class App:
 
 
 if __name__ == "__main__":
-    master = Tk()
+    master = TK.Tk()
     master.wm_title("Breast Cancer Evaluation Platform")
     master.geometry('900x750')
     master.iconbitmap("cancer.ico")
