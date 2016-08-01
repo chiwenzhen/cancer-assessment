@@ -7,16 +7,17 @@ chiwenzhen
 """
 import numpy as np
 import sys
+
 from Tkinter import Tk, Menu, Frame, BOTH, TOP, LEFT, RIGHT, Label, Entry, StringVar, Canvas, Scrollbar, SUNKEN, W
 from Tkinter import YES, Y, Scale, HORIZONTAL
 from ttk import Notebook
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
-from model import *
+from model import CancerEvaluator, DataSet
 from sklearn.learning_curve import learning_curve
 from sklearn.learning_curve import validation_curve
 from sklearn.cross_validation import StratifiedKFold
-from sklearn.metrics import confusion_matrix
+from sklearn.metrics import confusion_matrix, roc_curve, auc
 from sklearn.metrics import precision_score, recall_score, f1_score
 import matplotlib.pyplot as plt
 
@@ -53,13 +54,13 @@ class App:
         notebook.add(first_page, text="Main")
 
         second_page = Frame(notebook)
-        # notebook.add(second_page, text="Learning Curve")
+        notebook.add(second_page, text="Learning Curve")
 
         third_page = Frame(notebook)
-        # notebook.add(third_page, text="Validation Curve")
+        notebook.add(third_page, text="Validation Curve")
 
         fourth_page = Frame(notebook)
-        # notebook.add(fourth_page, text="ROC & AUC")
+        notebook.add(fourth_page, text="ROC & AUC")
 
         fifth_page = Frame(notebook)
         notebook.add(fifth_page, text="Testing Result")
@@ -113,7 +114,7 @@ class App:
                          "concavity MAX", "concave MAX",
                          "symmetry MAX", "fractal MAX"]
         for i in range(feature_num):
-            canv.create_window(60, (i + 1) * 40, window=Label(canv, text=feature_names[i]))
+            canv.create_window(60, (i + 1) * 40, window=Label(canv, text=str(i+1) + ". " + feature_names[i]))
             min_x = np.min(x_train[:, i])
             max_x = np.max(x_train[:, i])
             self.slides[i] = Scale(canv, from_=min_x, to=max_x, resolution=(max_x - min_x) / 100.0,
@@ -131,7 +132,6 @@ class App:
         train_std = np.std(train_scores, axis=1)
         test_mean = np.mean(test_scores, axis=1)
         test_std = np.std(test_scores, axis=1)
-
         frame_lcurve = Frame(second_page)
         frame_lcurve.pack(fill='x', expand=1, padx=15, pady=15)
         self.figure_lcurve = Figure(figsize=(6, 6), dpi=100)
@@ -150,6 +150,7 @@ class App:
         self.subplot_lcurve.legend(loc='lower right')
         self.subplot_lcurve.set_ylim([0.8, 1.0])
         canvas = FigureCanvasTkAgg(self.figure_lcurve, master=frame_lcurve)  # 内嵌散点图到UI
+        
         canvas.show()
         canvas.get_tk_widget().pack(side=TOP, fill=BOTH, expand=1)
         toolbar = NavigationToolbar2TkAgg(canvas, frame_lcurve)  # 内嵌散点图工具栏到UI
