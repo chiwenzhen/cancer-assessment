@@ -141,7 +141,7 @@ class App:
         self.subplot_lcurve.fill_between(train_sizes, train_mean + train_std, train_mean - train_std, alpha=0.15,
                                          color='blue')
         self.subplot_lcurve.plot(train_sizes, test_mean, color='green', linestyle='--', marker='s', markersize=5,
-                                 label='validation accuracy')
+                                 label='testing accuracy')
         self.subplot_lcurve.fill_between(train_sizes, test_mean + test_std, test_mean - test_std, alpha=0.15,
                                          color='green')
         self.subplot_lcurve.grid()
@@ -180,7 +180,7 @@ class App:
         self.subplot_vcurve.fill_between(param_range, train_mean + train_std, train_mean - train_std, alpha=0.15,
                                          color='blue')
         self.subplot_vcurve.plot(param_range, test_mean, color='green', linestyle='--', marker='s', markersize=5,
-                                 label='validation accuracy')
+                                 label='testing accuracy')
         self.subplot_vcurve.fill_between(param_range, test_mean + test_std, test_mean - test_std, alpha=0.15,
                                          color='green')
 
