@@ -70,19 +70,20 @@ class App:
         frame_x_y.pack(fill=TK.BOTH, expand=1, padx=15, pady=15)
         self.figure = Figure(figsize=(5, 4), dpi=100)
         self.subplot = self.figure.add_subplot(111)
+        self.figure.tight_layout() # 一定要放在add_subplot函数之后，否则崩溃
         self.subplot.set_title('Breast Cancer Evaluation Model')
-        self.plot_subplot(self.subplot, x_train_r, y_train)  # 绘制数据散点
-        minx = np.min(x_train_r[:, 0])
-        maxx = np.max(x_train_r[:, 0])
-        self.plot_hyperplane(self.subplot, self.evaluator.get_clf(), minx, maxx)  # 绘制超平面
         self.last_line = None
-        canvas = FigureCanvasTkAgg(self.figure, master=frame_x_y)  # 内嵌散点图到UI
-        self.figure.tight_layout()
-        canvas.show()
-        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
-        toolbar = NavigationToolbar2TkAgg(canvas, frame_x_y)  # 内嵌散点图工具栏到UI
-        toolbar.update()
-        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
+        
+        
+        h = .02  # step size in the mesh
+        x1_min, x2_max = x_train_r[:, 0].min() - 1, x_train_r[:, 0].max() + 1
+        x2_min, x2_max = x_train_r[:, 1].min() - 1, x_train_r[:, 1].max() + 1
+        xx1, xx2 = np.meshgrid(np.arange(x1_min, x2_max, h), np.arange(x2_min, x2_max, h))
+        yy = self.evaluator.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
+        yy = yy.reshape(xx1.shape)
+        self.subplot.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
+        self.subplot.scatter(x_train_r[:, 0], x_train_r[:, 1], c=y_train, cmap=plt.cm.Paired)
+        self.attach_figure(self.figure, frame_x_y)
 
         # first_page 2.概率输出框
         frame_output = TK.Frame(first_page)
@@ -149,13 +150,7 @@ class App:
         self.subplot_lcurve.set_ylabel('Accuracy')
         self.subplot_lcurve.legend(loc='lower right')
         self.subplot_lcurve.set_ylim([0.8, 1.0])
-        canvas = FigureCanvasTkAgg(self.figure_lcurve, master=frame_lcurve)  # 内嵌散点图到UI
-        
-        canvas.show()
-        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
-        toolbar = NavigationToolbar2TkAgg(canvas, frame_lcurve)  # 内嵌散点图工具栏到UI
-        toolbar.update()
-        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
+        self.attach_figure(self.figure_lcurve, frame_lcurve)
 
         # third_page 验证曲线
         evaluator_vcurve = CancerEvaluator()
@@ -190,12 +185,7 @@ class App:
         self.subplot_vcurve.set_xlabel('Parameter C')
         self.subplot_vcurve.set_ylabel('Accuracy')
         self.subplot_vcurve.set_ylim([0.91, 1.0])
-        canvas = FigureCanvasTkAgg(self.figure_vcurve, master=frame_vcurve)  # 内嵌散点图到UI
-        canvas.show()
-        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
-        toolbar = NavigationToolbar2TkAgg(canvas, frame_vcurve)  # 内嵌散点图工具栏到UI
-        toolbar.update()
-        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
+        self.attach_figure(self.figure_vcurve, frame_vcurve)
 
         # fourth_page ROC&AUC
         evaluator_roc = CancerEvaluator()
@@ -230,13 +220,7 @@ class App:
         self.subplot_roc.set_ylabel('true positive rate')
         self.subplot_roc.set_title('Receiver Operator Characteristic')
         self.subplot_roc.legend(loc="lower right")
-
-        canvas = FigureCanvasTkAgg(self.figure_roc, master=frame_roc)  # 内嵌散点图到UI
-        canvas.show()
-        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
-        toolbar = NavigationToolbar2TkAgg(canvas, frame_roc)  # 内嵌散点图工具栏到UI
-        toolbar.update()
-        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
+        self.attach_figure(self.figure_roc, frame_roc)
 
         # ffifth_page 1.测试集展示
         frame_test = TK.Frame(fifth_page)
@@ -244,17 +228,16 @@ class App:
         self.figure_test = Figure(figsize=(4, 4), dpi=100)
         self.subplot_test = self.figure_test.add_subplot(111)
         self.subplot_test.set_title('Breast Cancer Testing')
-        self.plot_subplot(self.subplot_test, x_test_r, y_test)  # 绘制数据散点
-        minx = np.min(x_test_r[:, 0])
-        maxx = np.max(x_test_r[:, 0])
-        self.plot_hyperplane(self.subplot_test, self.evaluator.get_clf(), minx, maxx)  # 绘制超平面
-        canvas = FigureCanvasTkAgg(self.figure_test, master=frame_test)  # 内嵌散点图到UI
         self.figure_test.tight_layout()
-        canvas.show()
-        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
-        toolbar = NavigationToolbar2TkAgg(canvas, frame_test)  # 内嵌散点图工具栏到UI
-        toolbar.update()
-        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
+        
+        x1_min, x2_max = x_test_r[:, 0].min() - 1, x_test_r[:, 0].max() + 1
+        x2_min, x2_max = x_test_r[:, 1].min() - 1, x_test_r[:, 1].max() + 1
+        xx1, xx2 = np.meshgrid(np.arange(x1_min, x2_max, h), np.arange(x2_min, x2_max, h))
+        yy = self.evaluator.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
+        yy = yy.reshape(xx1.shape)
+        self.subplot_test.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
+        self.subplot_test.scatter(x_test_r[:, 0], x_test_r[:, 1], c=y_test, cmap=plt.cm.Paired)
+        self.attach_figure(self.figure_test, frame_test)
 
         # first_page 2.测试性能指标 precision recall f_value
         y_pred = self.evaluator.get_pipeline().predict(x_test)
@@ -271,12 +254,7 @@ class App:
 
         self.subplot_matrix.set_xlabel('predicted label')
         self.subplot_matrix.set_ylabel('true label')
-
-        canvas = FigureCanvasTkAgg(self.figure_matrix, master=frame_matrix)  # 内嵌散点图到UI
-        self.figure_matrix.tight_layout()
-        canvas.show()
-        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
-        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
+        self.attach_figure(self.figure_matrix, frame_matrix)
 
         frame_result = TK.Frame(fifth_page)
         frame_result.pack(side=TK.LEFT, fill='x', expand=1, padx=15, pady=15)
@@ -328,6 +306,13 @@ class App:
         self.plot_point(self.subplot, self.evaluator.reduce(x))
         self.figure.canvas.draw()
 
+    def attach_figure(self, figure, frame):
+        canvas = FigureCanvasTkAgg(figure, master=frame)  # 内嵌散点图到UI
+        canvas.show()
+        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
+        toolbar = NavigationToolbar2TkAgg(canvas, frame)  # 内嵌散点图工具栏到UI
+        toolbar.update()
+        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
 
 if __name__ == "__main__":
     master = TK.Tk()
