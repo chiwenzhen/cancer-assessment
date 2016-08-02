@@ -14,9 +14,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder
 from sklearn.cross_validation import train_test_split
 from sklearn.externals import joblib
-from sklearn.metrics import roc_curve, auc
-from scipy import interp
-from sklearn.svm import SVC
 
 
 class CancerEvaluator:
