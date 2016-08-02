@@ -76,9 +76,9 @@ class App:
         
         
         h = .02  # step size in the mesh
-        x1_min, x2_max = x_train_r[:, 0].min() - 1, x_train_r[:, 0].max() + 1
+        x1_min, x1_max = x_train_r[:, 0].min() - 1, x_train_r[:, 0].max() + 1
         x2_min, x2_max = x_train_r[:, 1].min() - 1, x_train_r[:, 1].max() + 1
-        xx1, xx2 = np.meshgrid(np.arange(x1_min, x2_max, h), np.arange(x2_min, x2_max, h))
+        xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
         yy = self.evaluator.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
         yy = yy.reshape(xx1.shape)
         self.subplot.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
@@ -91,9 +91,6 @@ class App:
         self.malig_prob = TK.StringVar()
         TK.Label(frame_output, text="malignant prob").pack(side=TK.LEFT)
         TK.Entry(frame_output, textvariable=self.malig_prob, bd=5).pack(side=TK.LEFT, padx=5, pady=5)
-        TK.Label(frame_output, text="hyperplane： %.4f*x1 + %.4f*x2 + %.4f = 0" % (
-        self.evaluator.get_clf().coef_[0, 0], self.evaluator.get_clf().coef_[0, 1],
-        self.evaluator.get_clf().intercept_)).pack(side=TK.RIGHT)
 
         # first_page 3.滑动条
         frame_scale = TK.Frame(first_page)
@@ -155,6 +152,8 @@ class App:
         # third_page 验证曲线
         evaluator_vcurve = CancerEvaluator()
         param_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
+        # param_range = np.linspace(0.1, 1.0, 10)
+        # param_range = [2, 3]
         train_scores, test_scores = validation_curve(estimator=evaluator_vcurve.get_pipeline(),
                                                      X=x_train, y=y_train,
                                                      param_name='clf__C',
@@ -230,9 +229,9 @@ class App:
         self.subplot_test.set_title('Breast Cancer Testing')
         self.figure_test.tight_layout()
         
-        x1_min, x2_max = x_test_r[:, 0].min() - 1, x_test_r[:, 0].max() + 1
+        x1_min, x1_max = x_test_r[:, 0].min() - 1, x_test_r[:, 0].max() + 1
         x2_min, x2_max = x_test_r[:, 1].min() - 1, x_test_r[:, 1].max() + 1
-        xx1, xx2 = np.meshgrid(np.arange(x1_min, x2_max, h), np.arange(x2_min, x2_max, h))
+        xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
         yy = self.evaluator.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
         yy = yy.reshape(xx1.shape)
         self.subplot_test.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
@@ -268,17 +267,6 @@ class App:
         TK.Label(frame_result, text="F-value: ").grid(row=3, column=0, sticky=TK.W)
         TK.Label(frame_result, text=str(f1_score(y_true=y_test, y_pred=y_pred))).grid(row=3, column=1, sticky=TK.W)
 
-    # 根据x,y，绘制散点图
-    @staticmethod
-    def plot_subplot(subplot, x, y):
-        x_zero = x[y == 0]
-        x_one = x[y == 1]
-        subplot.plot(x_zero[:, 0], x_zero[:, 1], "g.", label='benign')
-        subplot.plot(x_one[:, 0], x_one[:, 1], "k.", label='malignant')
-        subplot.set_xlabel('x1')
-        subplot.set_ylabel('x2')
-        subplot.legend(loc='lower right')
-
     # 删除上一个点，再根据坐标X=(x1 ,x2)重绘绘制一个点，以实现点的移动
     def plot_point(self, subplot, x):
         if self.last_line is not None:
@@ -287,14 +275,6 @@ class App:
         lines = subplot.plot(x[:, 0], x[:, 1], "ro", label="case")
         self.last_line = lines.pop(0)
         subplot.legend(loc='lower right')
-
-    # 根据clf给出的系数，绘制超平面
-    @staticmethod
-    def plot_hyperplane(subplot, clf, min_x, max_x):
-        w = clf.coef_[0]
-        xx = np.linspace(min_x, max_x)
-        yy = -(w[0] * xx + clf.intercept_[0]) / w[1]
-        subplot.plot(xx, yy, "black")
 
     # 根据即特征值，计算归属类别的概率
     def predict(self, trivial):
