@@ -8,7 +8,7 @@ chiwenzhen
 import numpy as np
 import sys
 
-import Tkinter as TK
+import Tkinter as Tk
 from ttk import Notebook
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
@@ -20,6 +20,11 @@ from sklearn.metrics import confusion_matrix, roc_curve, auc
 from sklearn.metrics import precision_score, recall_score, f1_score
 import matplotlib.pyplot as plt
 from scipy import interp
+from sklearn.svm import SVC
+from sklearn.grid_search import GridSearchCV
+from sklearn.metrics import classification_report
+import matplotlib as mpl
+from mpl_toolkits.mplot3d import Axes3D
 
 
 class App:
@@ -41,40 +46,42 @@ class App:
 
         # 初始化UI
         # 1.菜单和标签页
-        menubar = TK.Menu(root)  # 添加菜单
+        menubar = Tk.Menu(root)  # 添加菜单
         root.config(menu=menubar)
-        filemenu = TK.Menu(menubar)
+        filemenu = Tk.Menu(menubar)
         filemenu.add_command(label="Exit", command=sys.exit)
         menubar.add_cascade(label="File", menu=filemenu)
 
         notebook = Notebook(root)  # 添加标签页
-        notebook.pack(fill=TK.BOTH)
+        notebook.pack(fill=Tk.BOTH)
 
-        first_page = TK.Frame(notebook)
+        first_page = Tk.Frame(notebook)
         notebook.add(first_page, text="Main")
 
-        second_page = TK.Frame(notebook)
+        second_page = Tk.Frame(notebook)
         notebook.add(second_page, text="Learning Curve")
 
-        third_page = TK.Frame(notebook)
+        third_page = Tk.Frame(notebook)
         notebook.add(third_page, text="Validation Curve")
 
-        fourth_page = TK.Frame(notebook)
+        fourth_page = Tk.Frame(notebook)
         notebook.add(fourth_page, text="ROC & AUC")
 
-        fifth_page = TK.Frame(notebook)
+        fifth_page = Tk.Frame(notebook)
         notebook.add(fifth_page, text="Testing Result")
 
+        sixth_page = Tk.Frame(notebook)
+        notebook.add(sixth_page, text="GridSearchCV")
+
         # 第1页 1.matplotlib绘制
-        frame_x_y = TK.Frame(first_page)
-        frame_x_y.pack(fill=TK.BOTH, expand=1, padx=15, pady=15)
+        frame_x_y = Tk.Frame(first_page)
+        frame_x_y.pack(fill=Tk.BOTH, expand=1, padx=15, pady=15)
         self.figure = Figure(figsize=(5, 4), dpi=100)
         self.subplot = self.figure.add_subplot(111)
-        self.figure.tight_layout() # 一定要放在add_subplot函数之后，否则崩溃
+        self.figure.tight_layout()  # 一定要放在add_subplot函数之后，否则崩溃
         self.subplot.set_title('Breast Cancer Evaluation Model')
         self.last_line = None
-        
-        
+
         h = .02  # step size in the mesh
         x1_min, x1_max = x_train_r[:, 0].min() - 1, x_train_r[:, 0].max() + 1
         x2_min, x2_max = x_train_r[:, 1].min() - 1, x_train_r[:, 1].max() + 1
@@ -86,21 +93,21 @@ class App:
         self.attach_figure(self.figure, frame_x_y)
 
         # 第1页 2.概率输出框
-        frame_output = TK.Frame(first_page)
-        frame_output.pack(fill=TK.BOTH, expand=1, padx=5, pady=5)
-        self.malig_prob = TK.StringVar()
-        TK.Label(frame_output, text="malignant prob").pack(side=TK.LEFT)
-        TK.Entry(frame_output, textvariable=self.malig_prob, bd=5).pack(side=TK.LEFT, padx=5, pady=5)
+        frame_output = Tk.Frame(first_page)
+        frame_output.pack(fill=Tk.BOTH, expand=1, padx=5, pady=5)
+        self.malig_prob = Tk.StringVar()
+        Tk.Label(frame_output, text="malignant prob").pack(side=Tk.LEFT)
+        Tk.Entry(frame_output, textvariable=self.malig_prob, bd=5).pack(side=Tk.LEFT, padx=5, pady=5)
 
         # 第1页 3.滑动条
-        frame_scale = TK.Frame(first_page)
-        frame_scale.pack(fill=TK.BOTH, expand=1, padx=5, pady=5)
-        canv = TK.Canvas(frame_scale, relief=TK.SUNKEN)
-        vbar = TK.Scrollbar(frame_scale, command=canv.yview)
+        frame_scale = Tk.Frame(first_page)
+        frame_scale.pack(fill=Tk.BOTH, expand=1, padx=5, pady=5)
+        canv = Tk.Canvas(frame_scale, relief=Tk.SUNKEN)
+        vbar = Tk.Scrollbar(frame_scale, command=canv.yview)
         canv.config(scrollregion=(0, 0, 300, 1500))
         canv.config(yscrollcommand=vbar.set)
-        vbar.pack(side=TK.RIGHT, fill=TK.Y)
-        canv.pack(side=TK.LEFT, expand=TK.YES, fill=TK.BOTH)
+        vbar.pack(side=Tk.RIGHT, fill=Tk.Y)
+        canv.pack(side=Tk.LEFT, expand=Tk.YES, fill=Tk.BOTH)
         feature_num = x_train.shape[1]
         self.slides = [None] * feature_num  # 滑动条个数为特征个数
         feature_names = ["radius", "texture", "perimeter", "area", "smoothness", "compactness", "concavity", "concave",
@@ -112,16 +119,16 @@ class App:
                          "concavity MAX", "concave MAX",
                          "symmetry MAX", "fractal MAX"]
         for i in range(feature_num):
-            canv.create_window(60, (i + 1) * 40, window=TK.Label(canv, text=str(i+1) + ". " + feature_names[i]))
+            canv.create_window(60, (i + 1) * 40, window=Tk.Label(canv, text=str(i + 1) + ". " + feature_names[i]))
             min_x = np.min(x_train[:, i])
             max_x = np.max(x_train[:, i])
-            self.slides[i] = TK.Scale(canv, from_=min_x, to=max_x, resolution=(max_x - min_x) / 100.0,
-                                   orient=TK.HORIZONTAL, command=self.predict)
+            self.slides[i] = Tk.Scale(canv, from_=min_x, to=max_x, resolution=(max_x - min_x) / 100.0,
+                                      orient=Tk.HORIZONTAL, command=self.predict)
             canv.create_window(200, (i + 1) * 40, window=self.slides[i])
 
         # 第2页 1.学习曲线
         evaluator_lcurve = CancerEvaluator()
-        train_sizes, train_scores, test_scores = learning_curve(estimator=evaluator_lcurve.get_pipeline(),
+        train_sizes, train_scores, test_scores = learning_curve(estimator=evaluator_lcurve.pipeline,
                                                                 X=x_train,
                                                                 y=y_train,
                                                                 train_sizes=np.linspace(0.1, 1.0, 10), cv=10, n_jobs=1)
@@ -130,30 +137,29 @@ class App:
         train_std = np.std(train_scores, axis=1)
         test_mean = np.mean(test_scores, axis=1)
         test_std = np.std(test_scores, axis=1)
-        frame_lcurve = TK.Frame(second_page)
-        frame_lcurve.pack(fill='x', expand=1, padx=15, pady=15)
+        frame_lcurve = Tk.Frame(second_page)
+        frame_lcurve.pack(fill="x", expand=1, padx=15, pady=15)
         figure_lcurve = Figure(figsize=(6, 6), dpi=100)
         subplot_lcurve = figure_lcurve.add_subplot(111)
-        subplot_lcurve.plot(train_sizes, train_mean, color='blue', marker='o', markersize=5,
-                                 label='training accuracy')
+        subplot_lcurve.plot(train_sizes, train_mean, color="blue", marker='o', markersize=5,
+                            label="training accuracy")
         subplot_lcurve.fill_between(train_sizes, train_mean + train_std, train_mean - train_std, alpha=0.15,
-                                         color='blue')
+                                    color="blue")
         subplot_lcurve.plot(train_sizes, test_mean, color='green', linestyle='--', marker='s', markersize=5,
-                                 label='cross-validation accuracy')
+                            label="cross-validation accuracy")
         subplot_lcurve.fill_between(train_sizes, test_mean + test_std, test_mean - test_std, alpha=0.15,
-                                         color='green')
+                                    color="green")
         subplot_lcurve.grid()
-        subplot_lcurve.set_xlabel('Number of training samples')
-        subplot_lcurve.set_ylabel('Accuracy')
-        subplot_lcurve.legend(loc='lower right')
+        subplot_lcurve.set_xlabel("Number of training samples")
+        subplot_lcurve.set_ylabel("Accuracy")
+        subplot_lcurve.legend(loc="lower right")
         subplot_lcurve.set_ylim([0.8, 1.0])
         self.attach_figure(figure_lcurve, frame_lcurve)
 
         # 第3页 验证曲线
         evaluator_vcurve = CancerEvaluator()
         param_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
-        # param_range = [2, 3]
-        train_scores, test_scores = validation_curve(estimator=evaluator_vcurve.get_pipeline(),
+        train_scores, test_scores = validation_curve(estimator=evaluator_vcurve.pipeline,
                                                      X=x_train, y=y_train,
                                                      param_name='clf__gamma',
                                                      param_range=param_range, cv=10)
@@ -163,19 +169,19 @@ class App:
         test_mean = np.mean(test_scores, axis=1)
         test_std = np.std(test_scores, axis=1)
 
-        frame_vcurve = TK.Frame(third_page)
+        frame_vcurve = Tk.Frame(third_page)
         frame_vcurve.pack(fill='x', expand=1, padx=15, pady=15)
         figure_vcurve = Figure(figsize=(6, 6), dpi=100)
         subplot_vcurve = figure_vcurve.add_subplot(111)
 
         subplot_vcurve.plot(param_range, train_mean, color='blue', marker='o', markersize=5,
-                                 label='training accuracy')
+                            label='training accuracy')
         subplot_vcurve.fill_between(param_range, train_mean + train_std, train_mean - train_std, alpha=0.15,
-                                         color='blue')
+                                    color='blue')
         subplot_vcurve.plot(param_range, test_mean, color='green', linestyle='--', marker='s', markersize=5,
-                                 label='cross-validation accuracy')
+                            label='cross-validation accuracy')
         subplot_vcurve.fill_between(param_range, test_mean + test_std, test_mean - test_std, alpha=0.15,
-                                         color='green')
+                                    color='green')
 
         subplot_vcurve.grid()
         subplot_vcurve.set_xscale('log')
@@ -187,7 +193,7 @@ class App:
 
         # 第4页 ROC&AUC
         evaluator_roc = CancerEvaluator()
-        frame_roc = TK.Frame(fourth_page)
+        frame_roc = Tk.Frame(fourth_page)
         frame_roc.pack(fill='x', expand=1, padx=15, pady=15)
         cv = StratifiedKFold(y_train, n_folds=3, random_state=1)
         figure_roc = Figure(figsize=(6, 6), dpi=100)
@@ -198,7 +204,7 @@ class App:
 
         for i, (train, test) in enumerate(cv):
             evaluator_roc.load_data(x_train, y_train)
-            probas = evaluator_roc.get_pipeline().fit(x_train[train], y_train[train]).predict_proba(x_train[test])
+            probas = evaluator_roc.pipeline.fit(x_train[train], y_train[train]).predict_proba(x_train[test])
             fpr, tpr, thresholds = roc_curve(y_train[test], probas[:, 1], pos_label=1)
             mean_tpr += interp(mean_fpr, fpr, tpr)
             mean_tpr[0] = 0.0
@@ -221,13 +227,13 @@ class App:
         self.attach_figure(figure_roc, frame_roc)
 
         # 第5页 1.测试集展示
-        frame_test = TK.Frame(fifth_page)
+        frame_test = Tk.Frame(fifth_page)
         frame_test.pack(fill='x', expand=1, padx=15, pady=15)
         figure_test = Figure(figsize=(4, 4), dpi=100)
         subplot_test = figure_test.add_subplot(111)
         subplot_test.set_title('Breast Cancer Testing')
         figure_test.tight_layout()
-        
+
         x1_min, x1_max = x_test_r[:, 0].min() - 1, x_test_r[:, 0].max() + 1
         x2_min, x2_max = x_test_r[:, 1].min() - 1, x_test_r[:, 1].max() + 1
         xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
@@ -238,9 +244,9 @@ class App:
         self.attach_figure(figure_test, frame_test)
 
         # 第5页 2.测试性能指标 precision recall f_value
-        y_pred = self.evaluator.get_pipeline().predict(x_test)
-        frame_matrix = TK.Frame(fifth_page)
-        frame_matrix.pack(side=TK.LEFT, fill='x', expand=1, padx=15, pady=15)
+        y_pred = self.evaluator.pipeline.predict(x_test)
+        frame_matrix = Tk.Frame(fifth_page)
+        frame_matrix.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
         figure_matrix = Figure(figsize=(4, 4), dpi=100)
         subplot_matrix = figure_matrix.add_subplot(111)
 
@@ -254,19 +260,72 @@ class App:
         subplot_matrix.set_ylabel('true label')
         self.attach_figure(figure_matrix, frame_matrix)
 
-        frame_result = TK.Frame(fifth_page)
-        frame_result.pack(side=TK.LEFT, fill='x', expand=1, padx=15, pady=15)
-        TK.Label(frame_result, text="Accuracy: ").grid(row=0, column=0, sticky=TK.W)
-        TK.Label(frame_result, text=str(self.evaluator.get_pipeline().score(x_test, y_test))).grid(row=0, column=1,
-                                                                                                sticky=TK.W)
-        TK.Label(frame_result, text="Precision: ").grid(row=1, column=0, sticky=TK.W)
-        TK.Label(frame_result, text=str(precision_score(y_true=y_test, y_pred=y_pred))).grid(row=1, column=1, sticky=TK.W)
-        TK.Label(frame_result, text="Recall: ").grid(row=2, column=0, sticky=TK.W)
-        TK.Label(frame_result, text=str(recall_score(y_true=y_test, y_pred=y_pred))).grid(row=2, column=1, sticky=TK.W)
-        TK.Label(frame_result, text="F-value: ").grid(row=3, column=0, sticky=TK.W)
-        TK.Label(frame_result, text=str(f1_score(y_true=y_test, y_pred=y_pred))).grid(row=3, column=1, sticky=TK.W)
+        frame_result = Tk.Frame(fifth_page)
+        frame_result.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
+        Tk.Label(frame_result, text="Accuracy: ").grid(row=0, column=0, sticky=Tk.W)
+        Tk.Label(frame_result, text=str(self.evaluator.pipeline.score(x_test, y_test))).grid(row=0, column=1,
+                                                                                             sticky=Tk.W)
+        Tk.Label(frame_result, text="Precision: ").grid(row=1, column=0, sticky=Tk.W)
+        Tk.Label(frame_result, text=str(precision_score(y_true=y_test, y_pred=y_pred))).grid(row=1, column=1,
+                                                                                             sticky=Tk.W)
+        Tk.Label(frame_result, text="Recall: ").grid(row=2, column=0, sticky=Tk.W)
+        Tk.Label(frame_result, text=str(recall_score(y_true=y_test, y_pred=y_pred))).grid(row=2, column=1, sticky=Tk.W)
+        Tk.Label(frame_result, text="F-value: ").grid(row=3, column=0, sticky=Tk.W)
+        Tk.Label(frame_result, text=str(f1_score(y_true=y_test, y_pred=y_pred))).grid(row=3, column=1, sticky=Tk.W)
 
-    # 删除上一个点，再根据坐标X=(x1 ,x2)重绘绘制一个点，以实现点的移动
+        # 第6页，GridSearchCV
+        evaluator_gs = CancerEvaluator()
+        evaluator_gs.pipeline.named_steps['clf'] = SVC(random_state=1)
+        frame_gs = Tk.Frame(sixth_page)
+        frame_gs.pack(fill='x', expand=1, padx=15, pady=15)
+        figure_gs = Figure(figsize=(6, 6), dpi=100)
+        subplot_gs1 = figure_gs.add_subplot(211)
+        subplot_gs1.set_xscale('log')
+        subplot_gs1.set_ylim([0.5, 1.0])
+        subplot_gs2 = figure_gs.add_subplot(212, projection='3d')
+
+        param_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
+        param_grid = [{'clf__C': param_range, 'clf__kernel': ['linear']},
+                      {'clf__C': param_range, 'clf__gamma': param_range, 'clf__kernel': ['rbf']}]
+        gs = GridSearchCV(estimator=evaluator_gs.pipeline, param_grid=param_grid, scoring='accuracy', cv=10,
+                          n_jobs=-1)
+        gs = gs.fit(x_train, y_train)
+
+        lieanr_end = len(param_range)
+        rbf_end = lieanr_end + len(param_range) ** 2
+        subplot_gs1.plot(map(lambda e: e[0]['clf__C'], gs.grid_scores_[0:lieanr_end]),
+                         map(lambda e: e[1], gs.grid_scores_[0:lieanr_end]),
+                         linewidth=1, label='svm_linear', color="blue", marker='o', markersize=5)
+        subplot_gs1.grid()
+
+        subplot_gs2.scatter(map(lambda e: e[0]['clf__C'], gs.grid_scores_[lieanr_end:rbf_end]),
+                            map(lambda e: e[0]['clf__gamma'], gs.grid_scores_[lieanr_end:rbf_end]),
+                            map(lambda e: e[1], gs.grid_scores_[lieanr_end:rbf_end]),
+                            linewidth=1, label='svm_rbf', c="r", marker="o")
+        self.attach_figure(figure_gs, frame_gs)
+
+        print("Best parameters set found on development set:")
+        print()
+        print(gs.best_params_)
+        print()
+        print("Grid scores on development set:")
+        print()
+
+        for params, mean_score, scores in gs.grid_scores_:
+            print("%0.3f (+/-%0.03f) for %r"
+                  % (mean_score, scores.std() * 2, params))
+        print()
+
+        print("Detailed classification report:")
+        print()
+        print("The model is trained on the full development set.")
+        print("The scores are computed on the full evaluation set.")
+        print()
+        y_true, y_pred = y_test, gs.predict(x_test)
+        print(classification_report(y_true, y_pred))
+        print()
+
+    # 重新绘制点
     def plot_point(self, subplot, x):
         if self.last_line is not None:
             self.last_line.remove()
@@ -285,16 +344,18 @@ class App:
         self.plot_point(self.subplot, self.evaluator.reduce(x))
         self.figure.canvas.draw()
 
-    def attach_figure(self, figure, frame):
+    @staticmethod
+    def attach_figure(figure, frame):
         canvas = FigureCanvasTkAgg(figure, master=frame)  # 内嵌散点图到UI
         canvas.show()
-        canvas.get_tk_widget().pack(side=TK.TOP, fill=TK.BOTH, expand=1)
+        canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
         toolbar = NavigationToolbar2TkAgg(canvas, frame)  # 内嵌散点图工具栏到UI
         toolbar.update()
-        canvas.tkcanvas.pack(side=TK.TOP, fill=TK.BOTH, expand=1)
+        canvas.tkcanvas.pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
+
 
 if __name__ == "__main__":
-    master = TK.Tk()
+    master = Tk.Tk()
     master.wm_title("Breast Cancer Evaluation Platform")
     master.geometry('900x750')
     master.iconbitmap("cancer.ico")
