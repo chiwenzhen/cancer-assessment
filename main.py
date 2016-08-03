@@ -65,7 +65,7 @@ class App:
         fifth_page = TK.Frame(notebook)
         notebook.add(fifth_page, text="Testing Result")
 
-        # first_page 1.matplotlib绘制
+        # 第1页 1.matplotlib绘制
         frame_x_y = TK.Frame(first_page)
         frame_x_y.pack(fill=TK.BOTH, expand=1, padx=15, pady=15)
         self.figure = Figure(figsize=(5, 4), dpi=100)
@@ -85,14 +85,14 @@ class App:
         self.subplot.scatter(x_train_r[:, 0], x_train_r[:, 1], c=y_train, cmap=plt.cm.Paired)
         self.attach_figure(self.figure, frame_x_y)
 
-        # first_page 2.概率输出框
+        # 第1页 2.概率输出框
         frame_output = TK.Frame(first_page)
         frame_output.pack(fill=TK.BOTH, expand=1, padx=5, pady=5)
         self.malig_prob = TK.StringVar()
         TK.Label(frame_output, text="malignant prob").pack(side=TK.LEFT)
         TK.Entry(frame_output, textvariable=self.malig_prob, bd=5).pack(side=TK.LEFT, padx=5, pady=5)
 
-        # first_page 3.滑动条
+        # 第1页 3.滑动条
         frame_scale = TK.Frame(first_page)
         frame_scale.pack(fill=TK.BOTH, expand=1, padx=5, pady=5)
         canv = TK.Canvas(frame_scale, relief=TK.SUNKEN)
@@ -119,7 +119,7 @@ class App:
                                    orient=TK.HORIZONTAL, command=self.predict)
             canv.create_window(200, (i + 1) * 40, window=self.slides[i])
 
-        # second_page 1.学习曲线
+        # 第2页 1.学习曲线
         evaluator_lcurve = CancerEvaluator()
         train_sizes, train_scores, test_scores = learning_curve(estimator=evaluator_lcurve.get_pipeline(),
                                                                 X=x_train,
@@ -132,31 +132,30 @@ class App:
         test_std = np.std(test_scores, axis=1)
         frame_lcurve = TK.Frame(second_page)
         frame_lcurve.pack(fill='x', expand=1, padx=15, pady=15)
-        self.figure_lcurve = Figure(figsize=(6, 6), dpi=100)
-        self.subplot_lcurve = self.figure_lcurve.add_subplot(111)
-        self.subplot_lcurve.plot(train_sizes, train_mean, color='blue', marker='o', markersize=5,
+        figure_lcurve = Figure(figsize=(6, 6), dpi=100)
+        subplot_lcurve = figure_lcurve.add_subplot(111)
+        subplot_lcurve.plot(train_sizes, train_mean, color='blue', marker='o', markersize=5,
                                  label='training accuracy')
-        self.subplot_lcurve.fill_between(train_sizes, train_mean + train_std, train_mean - train_std, alpha=0.15,
+        subplot_lcurve.fill_between(train_sizes, train_mean + train_std, train_mean - train_std, alpha=0.15,
                                          color='blue')
-        self.subplot_lcurve.plot(train_sizes, test_mean, color='green', linestyle='--', marker='s', markersize=5,
+        subplot_lcurve.plot(train_sizes, test_mean, color='green', linestyle='--', marker='s', markersize=5,
                                  label='cross-validation accuracy')
-        self.subplot_lcurve.fill_between(train_sizes, test_mean + test_std, test_mean - test_std, alpha=0.15,
+        subplot_lcurve.fill_between(train_sizes, test_mean + test_std, test_mean - test_std, alpha=0.15,
                                          color='green')
-        self.subplot_lcurve.grid()
-        self.subplot_lcurve.set_xlabel('Number of training samples')
-        self.subplot_lcurve.set_ylabel('Accuracy')
-        self.subplot_lcurve.legend(loc='lower right')
-        self.subplot_lcurve.set_ylim([0.8, 1.0])
-        self.attach_figure(self.figure_lcurve, frame_lcurve)
+        subplot_lcurve.grid()
+        subplot_lcurve.set_xlabel('Number of training samples')
+        subplot_lcurve.set_ylabel('Accuracy')
+        subplot_lcurve.legend(loc='lower right')
+        subplot_lcurve.set_ylim([0.8, 1.0])
+        self.attach_figure(figure_lcurve, frame_lcurve)
 
-        # third_page 验证曲线
+        # 第3页 验证曲线
         evaluator_vcurve = CancerEvaluator()
         param_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
-        # param_range = np.linspace(0.1, 1.0, 10)
         # param_range = [2, 3]
         train_scores, test_scores = validation_curve(estimator=evaluator_vcurve.get_pipeline(),
                                                      X=x_train, y=y_train,
-                                                     param_name='clf__C',
+                                                     param_name='clf__gamma',
                                                      param_range=param_range, cv=10)
 
         train_mean = np.mean(train_scores, axis=1)
@@ -166,33 +165,33 @@ class App:
 
         frame_vcurve = TK.Frame(third_page)
         frame_vcurve.pack(fill='x', expand=1, padx=15, pady=15)
-        self.figure_vcurve = Figure(figsize=(6, 6), dpi=100)
-        self.subplot_vcurve = self.figure_vcurve.add_subplot(111)
+        figure_vcurve = Figure(figsize=(6, 6), dpi=100)
+        subplot_vcurve = figure_vcurve.add_subplot(111)
 
-        self.subplot_vcurve.plot(param_range, train_mean, color='blue', marker='o', markersize=5,
+        subplot_vcurve.plot(param_range, train_mean, color='blue', marker='o', markersize=5,
                                  label='training accuracy')
-        self.subplot_vcurve.fill_between(param_range, train_mean + train_std, train_mean - train_std, alpha=0.15,
+        subplot_vcurve.fill_between(param_range, train_mean + train_std, train_mean - train_std, alpha=0.15,
                                          color='blue')
-        self.subplot_vcurve.plot(param_range, test_mean, color='green', linestyle='--', marker='s', markersize=5,
+        subplot_vcurve.plot(param_range, test_mean, color='green', linestyle='--', marker='s', markersize=5,
                                  label='cross-validation accuracy')
-        self.subplot_vcurve.fill_between(param_range, test_mean + test_std, test_mean - test_std, alpha=0.15,
+        subplot_vcurve.fill_between(param_range, test_mean + test_std, test_mean - test_std, alpha=0.15,
                                          color='green')
 
-        self.subplot_vcurve.grid()
-        self.subplot_vcurve.set_xscale('log')
-        self.subplot_vcurve.legend(loc='lower right')
-        self.subplot_vcurve.set_xlabel('Parameter C')
-        self.subplot_vcurve.set_ylabel('Accuracy')
-        self.subplot_vcurve.set_ylim([0.91, 1.0])
-        self.attach_figure(self.figure_vcurve, frame_vcurve)
+        subplot_vcurve.grid()
+        subplot_vcurve.set_xscale('log')
+        subplot_vcurve.legend(loc='lower right')
+        subplot_vcurve.set_xlabel('Parameter C')
+        subplot_vcurve.set_ylabel('Accuracy')
+        subplot_vcurve.set_ylim([0.91, 1.0])
+        self.attach_figure(figure_vcurve, frame_vcurve)
 
-        # fourth_page ROC&AUC
+        # 第4页 ROC&AUC
         evaluator_roc = CancerEvaluator()
         frame_roc = TK.Frame(fourth_page)
         frame_roc.pack(fill='x', expand=1, padx=15, pady=15)
         cv = StratifiedKFold(y_train, n_folds=3, random_state=1)
-        self.figure_roc = Figure(figsize=(6, 6), dpi=100)
-        self.subplot_roc = self.figure_roc.add_subplot(111)
+        figure_roc = Figure(figsize=(6, 6), dpi=100)
+        subplot_roc = figure_roc.add_subplot(111)
 
         mean_tpr = 0.0
         mean_fpr = np.linspace(0, 1, 100)
@@ -204,56 +203,56 @@ class App:
             mean_tpr += interp(mean_fpr, fpr, tpr)
             mean_tpr[0] = 0.0
             roc_auc = auc(fpr, tpr)
-            self.subplot_roc.plot(fpr, tpr, linewidth=1, label='ROC fold %d (area = %0.2f)' % (i + 1, roc_auc))
+            subplot_roc.plot(fpr, tpr, linewidth=1, label='ROC fold %d (area = %0.2f)' % (i + 1, roc_auc))
 
-        self.subplot_roc.plot([0, 1], [0, 1], linestyle='--', color=(0.6, 0.6, 0.6), label='random guessing')
+        subplot_roc.plot([0, 1], [0, 1], linestyle='--', color=(0.6, 0.6, 0.6), label='random guessing')
 
         mean_tpr /= len(cv)
         mean_tpr[-1] = 1.0
         mean_auc = auc(mean_fpr, mean_tpr)
-        self.subplot_roc.plot(mean_fpr, mean_tpr, 'k--', label='mean ROC (area = %0.2f)' % mean_auc, lw=2)
-        self.subplot_roc.plot([0, 0, 1], [0, 1, 1], lw=2, linestyle=':', color='black', label='perfect performance')
-        self.subplot_roc.set_xlim([-0.05, 1.05])
-        self.subplot_roc.set_ylim([-0.05, 1.05])
-        self.subplot_roc.set_xlabel('false positive rate')
-        self.subplot_roc.set_ylabel('true positive rate')
-        self.subplot_roc.set_title('Receiver Operator Characteristic')
-        self.subplot_roc.legend(loc="lower right")
-        self.attach_figure(self.figure_roc, frame_roc)
+        subplot_roc.plot(mean_fpr, mean_tpr, 'k--', label='mean ROC (area = %0.2f)' % mean_auc, lw=2)
+        subplot_roc.plot([0, 0, 1], [0, 1, 1], lw=2, linestyle=':', color='black', label='perfect performance')
+        subplot_roc.set_xlim([-0.05, 1.05])
+        subplot_roc.set_ylim([-0.05, 1.05])
+        subplot_roc.set_xlabel('false positive rate')
+        subplot_roc.set_ylabel('true positive rate')
+        subplot_roc.set_title('Receiver Operator Characteristic')
+        subplot_roc.legend(loc="lower right")
+        self.attach_figure(figure_roc, frame_roc)
 
-        # ffifth_page 1.测试集展示
+        # 第5页 1.测试集展示
         frame_test = TK.Frame(fifth_page)
         frame_test.pack(fill='x', expand=1, padx=15, pady=15)
-        self.figure_test = Figure(figsize=(4, 4), dpi=100)
-        self.subplot_test = self.figure_test.add_subplot(111)
-        self.subplot_test.set_title('Breast Cancer Testing')
-        self.figure_test.tight_layout()
+        figure_test = Figure(figsize=(4, 4), dpi=100)
+        subplot_test = figure_test.add_subplot(111)
+        subplot_test.set_title('Breast Cancer Testing')
+        figure_test.tight_layout()
         
         x1_min, x1_max = x_test_r[:, 0].min() - 1, x_test_r[:, 0].max() + 1
         x2_min, x2_max = x_test_r[:, 1].min() - 1, x_test_r[:, 1].max() + 1
         xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
         yy = self.evaluator.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
         yy = yy.reshape(xx1.shape)
-        self.subplot_test.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
-        self.subplot_test.scatter(x_test_r[:, 0], x_test_r[:, 1], c=y_test, cmap=plt.cm.Paired)
-        self.attach_figure(self.figure_test, frame_test)
+        subplot_test.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
+        subplot_test.scatter(x_test_r[:, 0], x_test_r[:, 1], c=y_test, cmap=plt.cm.Paired)
+        self.attach_figure(figure_test, frame_test)
 
-        # first_page 2.测试性能指标 precision recall f_value
+        # 第5页 2.测试性能指标 precision recall f_value
         y_pred = self.evaluator.get_pipeline().predict(x_test)
         frame_matrix = TK.Frame(fifth_page)
         frame_matrix.pack(side=TK.LEFT, fill='x', expand=1, padx=15, pady=15)
-        self.figure_matrix = Figure(figsize=(4, 4), dpi=100)
-        self.subplot_matrix = self.figure_matrix.add_subplot(111)
+        figure_matrix = Figure(figsize=(4, 4), dpi=100)
+        subplot_matrix = figure_matrix.add_subplot(111)
 
         confmat = confusion_matrix(y_true=y_test, y_pred=y_pred)
-        self.subplot_matrix.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
+        subplot_matrix.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
         for i in range(confmat.shape[0]):
             for j in range(confmat.shape[1]):
-                self.subplot_matrix.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
+                subplot_matrix.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
 
-        self.subplot_matrix.set_xlabel('predicted label')
-        self.subplot_matrix.set_ylabel('true label')
-        self.attach_figure(self.figure_matrix, frame_matrix)
+        subplot_matrix.set_xlabel('predicted label')
+        subplot_matrix.set_ylabel('true label')
+        self.attach_figure(figure_matrix, frame_matrix)
 
         frame_result = TK.Frame(fifth_page)
         frame_result.pack(side=TK.LEFT, fill='x', expand=1, padx=15, pady=15)

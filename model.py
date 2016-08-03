@@ -26,9 +26,9 @@ class CancerEvaluator:
         self.scaler = StandardScaler()
         self.pca = PCA(n_components=2)
 #        self.clf = LogisticRegression(penalty='l2', random_state=1)
-#         self.clf = SVC(kernel='rbf', probability=True, random_state=1)
-#         self.clf = SVC(kernel='poly', probability=True, random_state=1)
-        self.clf = SVC(kernel='linear', probability=True, random_state=1)
+        self.clf = SVC(kernel='rbf', probability=True, random_state=1)
+        # self.clf = SVC(kernel='poly', probability=True, random_state=1)
+#         self.clf = SVC(kernel='linear', probability=True, random_state=1)
         self.estimators = [('scl', self.scaler), ('pca', self.pca), ('clf', self.clf)]
         self.pipeline = Pipeline(self.estimators)  # 可以通过pipe.named_steps['pca']来访问PCA对象
 
