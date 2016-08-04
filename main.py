@@ -25,6 +25,7 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import classification_report
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D
+from tabulate import tabulate
 
 
 class App:
@@ -276,13 +277,16 @@ class App:
         # 第6页，GridSearchCV
         evaluator_gs = CancerEvaluator()
         evaluator_gs.pipeline.named_steps['clf'] = SVC(random_state=1)
-        frame_gs = Tk.Frame(sixth_page)
-        frame_gs.pack(fill='x', expand=1, padx=15, pady=15)
-        figure_gs = Figure(figsize=(6, 6), dpi=100)
-        subplot_gs1 = figure_gs.add_subplot(211)
-        subplot_gs1.set_xscale('log')
-        subplot_gs1.set_ylim([0.5, 1.0])
-        subplot_gs2 = figure_gs.add_subplot(212, projection='3d')
+        frame_linear_param = Tk.Frame(sixth_page)
+        frame_linear_param.pack(fill='x', expand=1, padx=15, pady=15)
+        figure_gs = Figure(figsize=(6, 4), dpi=100)
+        subplot_linear_param = figure_gs.add_subplot(111)
+        figure_gs.tight_layout()
+        subplot_linear_param.set_xscale('log')
+        subplot_linear_param.set_ylim([0.5, 1.0])
+        subplot_linear_param.set_xlabel("C")
+        subplot_linear_param.set_ylabel("Accuracy")
+        subplot_linear_param.set_title("GridSearchCV on parameter C in SVM with linear-kernel")
 
         param_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
         param_grid = [{'clf__C': param_range, 'clf__kernel': ['linear']},
@@ -290,40 +294,36 @@ class App:
         gs = GridSearchCV(estimator=evaluator_gs.pipeline, param_grid=param_grid, scoring='accuracy', cv=10,
                           n_jobs=-1)
         gs = gs.fit(x_train, y_train)
+        y_true, y_pred = y_test, gs.predict(x_test)
 
         lieanr_end = len(param_range)
         rbf_end = lieanr_end + len(param_range) ** 2
-        subplot_gs1.plot(map(lambda e: e[0]['clf__C'], gs.grid_scores_[0:lieanr_end]),
-                         map(lambda e: e[1], gs.grid_scores_[0:lieanr_end]),
-                         linewidth=1, label='svm_linear', color="blue", marker='o', markersize=5)
-        subplot_gs1.grid()
+        subplot_linear_param.plot(map(lambda e: e[0]['clf__C'], gs.grid_scores_[0:lieanr_end]),
+                                  map(lambda e: e[1], gs.grid_scores_[0:lieanr_end]),
+                                  linewidth=1, label='svm_linear', color="blue", marker='o', markersize=5)
+        subplot_linear_param.grid()
+        self.attach_figure(figure_gs, frame_linear_param)
 
-        subplot_gs2.scatter(map(lambda e: e[0]['clf__C'], gs.grid_scores_[lieanr_end:rbf_end]),
-                            map(lambda e: e[0]['clf__gamma'], gs.grid_scores_[lieanr_end:rbf_end]),
-                            map(lambda e: e[1], gs.grid_scores_[lieanr_end:rbf_end]),
-                            linewidth=1, label='svm_rbf', c="r", marker="o")
-        self.attach_figure(figure_gs, frame_gs)
-
-        print("Best parameters set found on development set:")
-        print()
-        print(gs.best_params_)
-        print()
-        print("Grid scores on development set:")
-        print()
-
+        frame_rbf_param = Tk.Frame(sixth_page)
+        frame_rbf_param.pack(fill='x', expand=1, padx=15, pady=15)
+        scrollbar = Tk.Scrollbar(frame_rbf_param)
+        scrollbar.pack(side=Tk.RIGHT, fill=Tk.Y)
+        text_rbf_param = Tk.Text(frame_rbf_param, width=800, wrap='none', yscrollcommand=scrollbar.set)
+        text_rbf_param.insert(Tk.END, "1. Best parameter: " + str(gs.best_params_) + "\n\n")
+        text_rbf_param.insert(Tk.END, "2. Best parameter performance on testing data.\n\n ")
+        text_rbf_param.insert(Tk.END, classification_report(y_true, y_pred))
+        text_rbf_param.insert(Tk.END, "\n\n")
+        text_rbf_param.insert(Tk.END, "3. All parameter searched by GridSearchCV.\n\n ")
+        log = []
         for params, mean_score, scores in gs.grid_scores_:
-            print("%0.3f (+/-%0.03f) for %r"
-                  % (mean_score, scores.std() * 2, params))
-        print()
+            log.append(
+                ["%0.3f" % (mean_score), "(+/-%0.03f)" % (scores.std() * 2), params["clf__C"],
+                 params.has_key("clf__gamma") and params["clf__gamma"] or "",
+                 params["clf__kernel"]])
+        text_rbf_param.insert(Tk.END, tabulate(log, headers=["Accuracy","SD", "C", "gamma", "type"]))
+        text_rbf_param.pack()
+        scrollbar.config(command=text_rbf_param.yview)
 
-        print("Detailed classification report:")
-        print()
-        print("The model is trained on the full development set.")
-        print("The scores are computed on the full evaluation set.")
-        print()
-        y_true, y_pred = y_test, gs.predict(x_test)
-        print(classification_report(y_true, y_pred))
-        print()
 
     # 重新绘制点
     def plot_point(self, subplot, x):
