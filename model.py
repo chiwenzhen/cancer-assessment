@@ -18,17 +18,15 @@ from sklearn.svm import SVC
 
 
 class CancerEvaluator:
-    def __init__(self):
+    def __init__(self, scaler=StandardScaler(), pca=PCA(n_components=2),
+                 clf=LogisticRegression(penalty='l2', random_state=1)):
         self.x_train = None
         self.x_test = None
         self.y_train = None
         self.y_test = None
-        self.scaler = StandardScaler()
-        self.pca = PCA(n_components=2)
-#        self.clf = LogisticRegression(penalty='l2', random_state=1)
-        self.clf = SVC(kernel='rbf', probability=True, random_state=1)
-        # self.clf = SVC(kernel='poly', probability=True, random_state=1)
-#         self.clf = SVC(kernel='linear', probability=True, random_state=1)
+        self.scaler = scaler
+        self.pca = pca
+        self.clf = clf
         self.estimators = [('scl', self.scaler), ('pca', self.pca), ('clf', self.clf)]
         self.pipeline = Pipeline(self.estimators)  # 可以通过pipe.named_steps['pca']来访问PCA对象
 
