@@ -56,26 +56,26 @@ class App:
         notebook = Notebook(root)  # 添加标签页
         notebook.pack(fill=Tk.BOTH)
 
-        first_page = Tk.Frame(notebook)
-        notebook.add(first_page, text="Main")
+        page_1 = Tk.Frame(notebook)
+        notebook.add(page_1, text="Main")
 
-        second_page = Tk.Frame(notebook)
-        notebook.add(second_page, text="Learning Curve")
+        page_2 = Tk.Frame(notebook)
+        notebook.add(page_2, text="Learning Curve")
 
-        third_page = Tk.Frame(notebook)
-        notebook.add(third_page, text="Validation Curve")
+        page_3 = Tk.Frame(notebook)
+        notebook.add(page_3, text="Validation Curve")
 
-        fourth_page = Tk.Frame(notebook)
-        notebook.add(fourth_page, text="ROC & AUC")
+        page_4 = Tk.Frame(notebook)
+        notebook.add(page_4, text="ROC & AUC")
 
-        fifth_page = Tk.Frame(notebook)
-        notebook.add(fifth_page, text="Testing Result")
+        page_5 = Tk.Frame(notebook)
+        notebook.add(page_5, text="Testing Result")
 
-        sixth_page = Tk.Frame(notebook)
-        notebook.add(sixth_page, text="GridSearchCV")
+        page_6 = Tk.Frame(notebook)
+        notebook.add(page_6, text="GridSearchCV")
 
         # 第1页 1.matplotlib绘制
-        frame_x_y = Tk.Frame(first_page)
+        frame_x_y = Tk.Frame(page_1)
         frame_x_y.pack(fill=Tk.BOTH, expand=1, padx=15, pady=15)
         self.figure = Figure(figsize=(5, 4), dpi=100)
         self.subplot = self.figure.add_subplot(111)
@@ -94,14 +94,14 @@ class App:
         self.attach_figure(self.figure, frame_x_y)
 
         # 第1页 2.概率输出框
-        frame_output = Tk.Frame(first_page)
+        frame_output = Tk.Frame(page_1)
         frame_output.pack(fill=Tk.BOTH, expand=1, padx=5, pady=5)
         self.malig_prob = Tk.StringVar()
         Tk.Label(frame_output, text="malignant prob").pack(side=Tk.LEFT)
         Tk.Entry(frame_output, textvariable=self.malig_prob, bd=5).pack(side=Tk.LEFT, padx=5, pady=5)
 
         # 第1页 3.滑动条
-        frame_scale = Tk.Frame(first_page)
+        frame_scale = Tk.Frame(page_1)
         frame_scale.pack(fill=Tk.BOTH, expand=1, padx=5, pady=5)
         canv = Tk.Canvas(frame_scale, relief=Tk.SUNKEN)
         vbar = Tk.Scrollbar(frame_scale, command=canv.yview)
@@ -138,7 +138,7 @@ class App:
         train_std = np.std(train_scores, axis=1)
         test_mean = np.mean(test_scores, axis=1)
         test_std = np.std(test_scores, axis=1)
-        frame_lcurve = Tk.Frame(second_page)
+        frame_lcurve = Tk.Frame(page_2)
         frame_lcurve.pack(fill="x", expand=1, padx=15, pady=15)
         figure_lcurve = Figure(figsize=(6, 6), dpi=100)
         subplot_lcurve = figure_lcurve.add_subplot(111)
@@ -170,7 +170,7 @@ class App:
         test_mean = np.mean(test_scores, axis=1)
         test_std = np.std(test_scores, axis=1)
 
-        frame_vcurve = Tk.Frame(third_page)
+        frame_vcurve = Tk.Frame(page_3)
         frame_vcurve.pack(fill='x', expand=1, padx=15, pady=15)
         figure_vcurve = Figure(figsize=(6, 6), dpi=100)
         subplot_vcurve = figure_vcurve.add_subplot(111)
@@ -194,7 +194,7 @@ class App:
 
         # 第4页 ROC&AUC
         evaluator_roc = CancerEvaluator()
-        frame_roc = Tk.Frame(fourth_page)
+        frame_roc = Tk.Frame(page_4)
         frame_roc.pack(fill='x', expand=1, padx=15, pady=15)
         cv = StratifiedKFold(y_train, n_folds=3, random_state=1)
         figure_roc = Figure(figsize=(6, 6), dpi=100)
@@ -228,7 +228,7 @@ class App:
         self.attach_figure(figure_roc, frame_roc)
 
         # 第5页 1.测试集展示
-        frame_test = Tk.Frame(fifth_page)
+        frame_test = Tk.Frame(page_5)
         frame_test.pack(fill='x', expand=1, padx=15, pady=15)
         figure_test = Figure(figsize=(4, 4), dpi=100)
         subplot_test = figure_test.add_subplot(111)
@@ -246,7 +246,7 @@ class App:
 
         # 第5页 2.测试性能指标 precision recall f_value
         y_pred = self.evaluator.pipeline.predict(x_test)
-        frame_matrix = Tk.Frame(fifth_page)
+        frame_matrix = Tk.Frame(page_5)
         frame_matrix.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
         figure_matrix = Figure(figsize=(4, 4), dpi=100)
         subplot_matrix = figure_matrix.add_subplot(111)
@@ -261,7 +261,7 @@ class App:
         subplot_matrix.set_ylabel('true label')
         self.attach_figure(figure_matrix, frame_matrix)
 
-        frame_result = Tk.Frame(fifth_page)
+        frame_result = Tk.Frame(page_5)
         frame_result.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
         Tk.Label(frame_result, text="Accuracy: ").grid(row=0, column=0, sticky=Tk.W)
         Tk.Label(frame_result, text=str(self.evaluator.pipeline.score(x_test, y_test))).grid(row=0, column=1,
@@ -277,7 +277,7 @@ class App:
         # 第6页，GridSearchCV
         evaluator_gs = CancerEvaluator()
         evaluator_gs.pipeline.named_steps['clf'] = SVC(random_state=1)
-        frame_linear_param = Tk.Frame(sixth_page)
+        frame_linear_param = Tk.Frame(page_6)
         frame_linear_param.pack(fill='x', expand=1, padx=15, pady=15)
         figure_gs = Figure(figsize=(6, 4), dpi=100)
         subplot_linear_param = figure_gs.add_subplot(111)
@@ -304,7 +304,7 @@ class App:
         subplot_linear_param.grid()
         self.attach_figure(figure_gs, frame_linear_param)
 
-        frame_rbf_param = Tk.Frame(sixth_page)
+        frame_rbf_param = Tk.Frame(page_6)
         frame_rbf_param.pack(fill='x', expand=1, padx=15, pady=15)
         scrollbar = Tk.Scrollbar(frame_rbf_param)
         scrollbar.pack(side=Tk.RIGHT, fill=Tk.Y)
