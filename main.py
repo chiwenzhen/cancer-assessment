@@ -113,7 +113,7 @@ class App:
         RocAucFrame(page_5, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
 
         # 第6页，GridSearchCV
-        clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
+        clf_svm = CancerEvaluator(clf=SVC(random_state=1))
         GridSearchCVFrame(page_6, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
 
         # 第7页 t-SNE

@@ -11,8 +11,6 @@ from tabulate import tabulate
 class GridSearchCVFrame(Tk.Frame):
     def __init__(self, master, x_train, y_train, x_test, y_test, evaluator):
         Tk.Frame.__init__(self, master)
-
-        evaluator.pipeline.named_steps['clf'] = SVC(random_state=1)
         frame_linear_param = Tk.Frame(self)
         frame_linear_param.pack(fill='x', expand=1, padx=15, pady=15)
         figure_gs = Figure(figsize=(6, 4), dpi=100)
