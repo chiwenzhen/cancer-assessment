@@ -5,36 +5,25 @@ chiwenzhen
 @ruijie
 
 """
-import numpy as np
 import sys
-
 import Tkinter as Tk
 from ttk import Notebook
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
-from matplotlib.figure import Figure
 from model import CancerEvaluator, DataSet
-from sklearn.learning_curve import learning_curve
-from sklearn.learning_curve import validation_curve
-from sklearn.cross_validation import StratifiedKFold
-from sklearn.metrics import confusion_matrix, roc_curve, auc
-from sklearn.metrics import precision_score, recall_score, f1_score
-import matplotlib.pyplot as plt
-from scipy import interp
 from sklearn.svm import SVC
-from sklearn.grid_search import GridSearchCV
-from sklearn.metrics import classification_report
-from tabulate import tabulate
-from sklearn.preprocessing import StandardScaler
-from sklearn.manifold import TSNE
 from sklearn.ensemble import RandomForestClassifier
+from frame_train import TrainFrame
+from frame_test import TestFrame
+from frame_learning_curve import LearningCurveFrame
+from frame_validation_curve import ValidationCurveFrame
+from frame_roc_auc import RocAucFrame
+from frame_gridsearchcv import GridSearchCVFrame
+from frame_tsne import TSNEFrame
 
 
 class App:
     def __init__(self, root):
         # 数据载入和分类器训练
         self.dataset = DataSet(data_path="wdbc.data")
-        x = self.dataset.x
-        y = self.dataset.y
         x_train = self.dataset.x_train
         y_train = self.dataset.y_train
         x_test = self.dataset.x_test
@@ -61,25 +50,25 @@ class App:
         page_13 = Tk.Frame(notebook_1)
         notebook_1.add(page_13, text="RF")
 
-        page_5 = Tk.Frame(notebook)
-        notebook.add(page_5, text="Testing  ")
-        notebook_5 = Notebook(page_5)  # 添加子标签页
-        notebook_5.pack(fill=Tk.BOTH)
-        page_51 = Tk.Frame(notebook_5)
-        notebook_5.add(page_51, text="LR")
-        page_52 = Tk.Frame(notebook_5)
-        notebook_5.add(page_52, text="SVM")
-        page_53 = Tk.Frame(notebook_5)
-        notebook_5.add(page_53, text="RF")
-
         page_2 = Tk.Frame(notebook)
-        notebook.add(page_2, text="Learning Curve")
+        notebook.add(page_2, text="Testing  ")
+        subnotebook_2 = Notebook(page_2)  # 添加子标签页
+        subnotebook_2.pack(fill=Tk.BOTH)
+        page_21 = Tk.Frame(subnotebook_2)
+        subnotebook_2.add(page_21, text="LR")
+        page_22 = Tk.Frame(subnotebook_2)
+        subnotebook_2.add(page_22, text="SVM")
+        page_23 = Tk.Frame(subnotebook_2)
+        subnotebook_2.add(page_23, text="RF")
 
         page_3 = Tk.Frame(notebook)
-        notebook.add(page_3, text="Validation Curve")
+        notebook.add(page_3, text="Learning Curve")
 
         page_4 = Tk.Frame(notebook)
-        notebook.add(page_4, text="ROC & AUC")
+        notebook.add(page_4, text="Validation Curve")
+
+        page_5 = Tk.Frame(notebook)
+        notebook.add(page_5, text="ROC & AUC")
 
         page_6 = Tk.Frame(notebook)
         notebook.add(page_6, text="GridSearchCV")
@@ -87,531 +76,48 @@ class App:
         page_7 = Tk.Frame(notebook)
         notebook.add(page_7, text="t-SNE")
 
-        # 第1.1页 matplotlib绘制
-        self.evaluator_lr = CancerEvaluator()
-        self.evaluator_lr.load_data(x, y)
-        self.evaluator_lr.train()
-        x_train_r = self.evaluator_lr.reduce(x_train)  # 特征降维
-        x_test_r = self.evaluator_lr.reduce(x_test)  # 特征降维
+        # 第1.1页 Logistic Regression Training
+        clf_lr = CancerEvaluator()
+        TrainFrame(page_11, x_train, y_train, x_test, y_test, clf_lr).pack(fill=Tk.BOTH)
 
-        frame_11_train = Tk.Frame(page_11)
-        frame_11_train.pack(fill=Tk.BOTH, expand=1, padx=15, pady=15)
-        self.figure_11_train = Figure(figsize=(5, 4), dpi=100)
-        self.subplot_11_train = self.figure_11_train.add_subplot(111)
-        self.figure_11_train.tight_layout()  # 一定要放在add_subplot函数之后，否则崩溃
-        self.subplot_11_train.set_title('Breast Cancer Evaluation Model')
-        self.last_line = None
+        # 第1.2页 Support Vector Machine Training
+        clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
+        TrainFrame(page_12, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
 
-        h = .02  # step size in the mesh
-        x1_min, x1_max = x_train_r[:, 0].min() - 1, x_train_r[:, 0].max() + 1
-        x2_min, x2_max = x_train_r[:, 1].min() - 1, x_train_r[:, 1].max() + 1
-        xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
-        yy = self.evaluator_lr.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
-        yy = yy.reshape(xx1.shape)
-        self.subplot_11_train.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
-        self.subplot_11_train.scatter(x_train_r[:, 0], x_train_r[:, 1], c=y_train, cmap=plt.cm.Paired)
-        self.attach_figure(self.figure_11_train, frame_11_train)
+        # 第1.3页 Random Forest Training
+        clf_rf = CancerEvaluator(clf=RandomForestClassifier())
+        TrainFrame(page_13, x_train, y_train, x_test, y_test, clf_rf).pack(fill=Tk.BOTH)
 
-        # 第1.1页 概率输出框
-        frame_11_prob = Tk.Frame(page_11)
-        frame_11_prob.pack(fill=Tk.BOTH, expand=1, padx=5, pady=5)
-        self.strvar_11_prob = Tk.StringVar()
-        Tk.Label(frame_11_prob, text="malignant prob").pack(side=Tk.LEFT)
-        Tk.Entry(frame_11_prob, textvariable=self.strvar_11_prob, bd=5).pack(side=Tk.LEFT, padx=5, pady=5)
+        # 第2.1页 Logistic Regression Testing
+        clf_lr = CancerEvaluator()
+        TestFrame(page_21, x_train, y_train, x_test, y_test, clf_lr).pack(fill=Tk.BOTH)
 
-        # 第1.1页 滑动条
-        frame_11_scale = Tk.Frame(page_11)
-        frame_11_scale.pack(fill=Tk.BOTH, expand=1, padx=5, pady=5)
-        canv = Tk.Canvas(frame_11_scale, relief=Tk.SUNKEN)
-        vbar = Tk.Scrollbar(frame_11_scale, command=canv.yview)
-        canv.config(scrollregion=(0, 0, 300, 1500))
-        canv.config(yscrollcommand=vbar.set)
-        vbar.pack(side=Tk.RIGHT, fill=Tk.Y)
-        canv.pack(side=Tk.LEFT, expand=Tk.YES, fill=Tk.BOTH)
-        feature_num = x_train.shape[1]
-        self.slides_11 = [None] * feature_num  # 滑动条个数为特征个数
-        feature_names = ["radius", "texture", "perimeter", "area", "smoothness", "compactness", "concavity", "concave",
-                         "symmetry", "fractal",
-                         "radius SE", "texture SE", "perimeter SE", "area SE", "smoothness SE", "compactness SE",
-                         "concavity SE", "concave SE",
-                         "symmetry SE", "fractal SE",
-                         "radius MAX", "texture MAX", "perimeter MAX", "area MAX", "smoothness MAX", "compactness MAX",
-                         "concavity MAX", "concave MAX",
-                         "symmetry MAX", "fractal MAX"]
-        for i in range(feature_num):
-            canv.create_window(60, (i + 1) * 40, window=Tk.Label(canv, text=str(i + 1) + ". " + feature_names[i]))
-            min_x = np.min(x_train[:, i])
-            max_x = np.max(x_train[:, i])
-            self.slides_11[i] = Tk.Scale(canv, from_=min_x, to=max_x, resolution=(max_x - min_x) / 100.0,
-                                      orient=Tk.HORIZONTAL, command=self.predict1)
-            canv.create_window(200, (i + 1) * 40, window=self.slides_11[i])
+        # 第2.2页 Support Vector Machine Testing
+        clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
+        TestFrame(page_22, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
 
-        # 第1.2页 matplotlib绘制
-        self.evaluator_svm = CancerEvaluator(clf = SVC(kernel='rbf', probability=True, random_state=1))
-        self.evaluator_svm.load_data(x, y)
-        self.evaluator_svm.train()
-        x_train_r = self.evaluator_svm.reduce(x_train)  # 特征降维
-        x_test_r = self.evaluator_svm.reduce(x_test)  # 特征降维
+        # 第2.3页 Random Forest Testing
+        clf_rf = CancerEvaluator(clf=RandomForestClassifier())
+        TestFrame(page_23, x_train, y_train, x_test, y_test, clf_rf).pack(fill=Tk.BOTH)
 
-        frame_12_train = Tk.Frame(page_12)
-        frame_12_train.pack(fill=Tk.BOTH, expand=1, padx=15, pady=15)
-        self.figure_12_train = Figure(figsize=(5, 4), dpi=100)
-        self.subplot_12_train = self.figure_12_train.add_subplot(111)
-        self.figure_12_train.tight_layout()  # 一定要放在add_subplot函数之后，否则崩溃
-        self.subplot_12_train.set_title('Breast Cancer Evaluation Model')
-        self.last_line = None
+        # 第3页 学习曲线
+        clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
+        LearningCurveFrame(page_3, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
 
-        h = .02  # step size in the mesh
-        x1_min, x1_max = x_train_r[:, 0].min() - 1, x_train_r[:, 0].max() + 1
-        x2_min, x2_max = x_train_r[:, 1].min() - 1, x_train_r[:, 1].max() + 1
-        xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
-        yy = self.evaluator_svm.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
-        yy = yy.reshape(xx1.shape)
-        self.subplot_12_train.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
-        self.subplot_12_train.scatter(x_train_r[:, 0], x_train_r[:, 1], c=y_train, cmap=plt.cm.Paired)
-        self.attach_figure(self.figure_12_train, frame_12_train)
+        # 第4页 验证曲线
+        clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
+        ValidationCurveFrame(page_4, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
 
-        # 第1.2页 概率输出框
-        frame_12_prob = Tk.Frame(page_12)
-        frame_12_prob.pack(fill=Tk.BOTH, expand=1, padx=5, pady=5)
-        self.strvar_12_prob = Tk.StringVar()
-        Tk.Label(frame_12_prob, text="malignant prob").pack(side=Tk.LEFT)
-        Tk.Entry(frame_12_prob, textvariable=self.strvar_12_prob, bd=5).pack(side=Tk.LEFT, padx=5, pady=5)
-
-        # 第1.2页 滑动条
-        frame_12_scale = Tk.Frame(page_12)
-        frame_12_scale.pack(fill=Tk.BOTH, expand=1, padx=5, pady=5)
-        canv = Tk.Canvas(frame_12_scale, relief=Tk.SUNKEN)
-        vbar = Tk.Scrollbar(frame_12_scale, command=canv.yview)
-        canv.config(scrollregion=(0, 0, 300, 1500))
-        canv.config(yscrollcommand=vbar.set)
-        vbar.pack(side=Tk.RIGHT, fill=Tk.Y)
-        canv.pack(side=Tk.LEFT, expand=Tk.YES, fill=Tk.BOTH)
-        feature_num = x_train.shape[1]
-        self.slides_12 = [None] * feature_num  # 滑动条个数为特征个数
-        feature_names = ["radius", "texture", "perimeter", "area", "smoothness", "compactness", "concavity", "concave",
-                         "symmetry", "fractal",
-                         "radius SE", "texture SE", "perimeter SE", "area SE", "smoothness SE", "compactness SE",
-                         "concavity SE", "concave SE",
-                         "symmetry SE", "fractal SE",
-                         "radius MAX", "texture MAX", "perimeter MAX", "area MAX", "smoothness MAX", "compactness MAX",
-                         "concavity MAX", "concave MAX",
-                         "symmetry MAX", "fractal MAX"]
-        for i in range(feature_num):
-            canv.create_window(60, (i + 1) * 40, window=Tk.Label(canv, text=str(i + 1) + ". " + feature_names[i]))
-            min_x = np.min(x_train[:, i])
-            max_x = np.max(x_train[:, i])
-            self.slides_12[i] = Tk.Scale(canv, from_=min_x, to=max_x, resolution=(max_x - min_x) / 100.0,
-                                      orient=Tk.HORIZONTAL, command=self.predict2)
-            canv.create_window(200, (i + 1) * 40, window=self.slides_12[i])
-
-        # 第1.3页 matplotlib绘制
-        self.evaluator_rf = CancerEvaluator(clf=RandomForestClassifier())
-        self.evaluator_rf.load_data(x, y)
-        self.evaluator_rf.train()
-        x_train_r = self.evaluator_rf.reduce(x_train)  # 特征降维
-        x_test_r = self.evaluator_rf.reduce(x_test)  # 特征降维
-
-        frame_13_train = Tk.Frame(page_13)
-        frame_13_train.pack(fill=Tk.BOTH, expand=1, padx=15, pady=15)
-        self.figure_13_train = Figure(figsize=(5, 4), dpi=100)
-        self.subplot_13_train = self.figure_13_train.add_subplot(111)
-        self.figure_13_train.tight_layout()  # 一定要放在add_subplot函数之后，否则崩溃
-        self.subplot_13_train.set_title('Breast Cancer Evaluation Model')
-        self.last_line = None
-
-        h = .02  # step size in the mesh
-        x1_min, x1_max = x_train_r[:, 0].min() - 1, x_train_r[:, 0].max() + 1
-        x2_min, x2_max = x_train_r[:, 1].min() - 1, x_train_r[:, 1].max() + 1
-        xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
-        yy = self.evaluator_rf.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
-        yy = yy.reshape(xx1.shape)
-        self.subplot_13_train.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
-        self.subplot_13_train.scatter(x_train_r[:, 0], x_train_r[:, 1], c=y_train, cmap=plt.cm.Paired)
-        self.attach_figure(self.figure_13_train, frame_13_train)
-
-        # 第1.3页 概率输出框
-        frame_13_prob = Tk.Frame(page_13)
-        frame_13_prob.pack(fill=Tk.BOTH, expand=1, padx=5, pady=5)
-        self.strvar_13_prob = Tk.StringVar()
-        Tk.Label(frame_13_prob, text="malignant prob").pack(side=Tk.LEFT)
-        Tk.Entry(frame_13_prob, textvariable=self.strvar_13_prob, bd=5).pack(side=Tk.LEFT, padx=5, pady=5)
-
-        # 第1.3页 滑动条
-        frame_13_scale = Tk.Frame(page_13)
-        frame_13_scale.pack(fill=Tk.BOTH, expand=1, padx=5, pady=5)
-        canv = Tk.Canvas(frame_13_scale, relief=Tk.SUNKEN)
-        vbar = Tk.Scrollbar(frame_13_scale, command=canv.yview)
-        canv.config(scrollregion=(0, 0, 300, 1500))
-        canv.config(yscrollcommand=vbar.set)
-        vbar.pack(side=Tk.RIGHT, fill=Tk.Y)
-        canv.pack(side=Tk.LEFT, expand=Tk.YES, fill=Tk.BOTH)
-        feature_num = x_train.shape[1]
-        self.slides_13 = [None] * feature_num  # 滑动条个数为特征个数
-        feature_names = ["radius", "texture", "perimeter", "area", "smoothness", "compactness", "concavity",
-                         "concave",
-                         "symmetry", "fractal",
-                         "radius SE", "texture SE", "perimeter SE", "area SE", "smoothness SE", "compactness SE",
-                         "concavity SE", "concave SE",
-                         "symmetry SE", "fractal SE",
-                         "radius MAX", "texture MAX", "perimeter MAX", "area MAX", "smoothness MAX",
-                         "compactness MAX",
-                         "concavity MAX", "concave MAX",
-                         "symmetry MAX", "fractal MAX"]
-        for i in range(feature_num):
-            canv.create_window(60, (i + 1) * 40, window=Tk.Label(canv, text=str(i + 1) + ". " + feature_names[i]))
-            min_x = np.min(x_train[:, i])
-            max_x = np.max(x_train[:, i])
-            self.slides_13[i] = Tk.Scale(canv, from_=min_x, to=max_x, resolution=(max_x - min_x) / 100.0,
-                                         orient=Tk.HORIZONTAL, command=self.predict3)
-            canv.create_window(200, (i + 1) * 40, window=self.slides_13[i])
-
-        # 第5.1页 测试集展示
-        frame_51_test = Tk.Frame(page_51)
-        frame_51_test.pack(fill='x', expand=1, padx=15, pady=15)
-        figure_51_test = Figure(figsize=(4, 4), dpi=100)
-        subplot_51_test = figure_51_test.add_subplot(111)
-        subplot_51_test.set_title('Breast Cancer Testing')
-        figure_51_test.tight_layout()
-
-        x1_min, x1_max = x_test_r[:, 0].min() - 1, x_test_r[:, 0].max() + 1
-        x2_min, x2_max = x_test_r[:, 1].min() - 1, x_test_r[:, 1].max() + 1
-        xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
-        yy = self.evaluator_lr.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
-        yy = yy.reshape(xx1.shape)
-        subplot_51_test.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
-        subplot_51_test.scatter(x_test_r[:, 0], x_test_r[:, 1], c=y_test, cmap=plt.cm.Paired)
-        self.attach_figure(figure_51_test, frame_51_test)
-
-        # 第5.1页 测试性能指标 precision recall f_value
-        y_pred = self.evaluator_lr.pipeline.predict(x_test)
-        frame_51_matrix = Tk.Frame(page_51)
-        frame_51_matrix.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
-        figure_51_matrix = Figure(figsize=(4, 4), dpi=100)
-        subplot_51_matrix = figure_51_matrix.add_subplot(111)
-
-        confmat = confusion_matrix(y_true=y_test, y_pred=y_pred)
-        subplot_51_matrix.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
-        for i in range(confmat.shape[0]):
-            for j in range(confmat.shape[1]):
-                subplot_51_matrix.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
-
-        subplot_51_matrix.set_xlabel('predicted label')
-        subplot_51_matrix.set_ylabel('true label')
-        self.attach_figure(figure_51_matrix, frame_51_matrix)
-
-        frame_51_result = Tk.Frame(page_51)
-        frame_51_result.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
-        Tk.Label(frame_51_result, text="Accuracy: ").grid(row=0, column=0, sticky=Tk.W)
-        Tk.Label(frame_51_result, text=str(self.evaluator_lr.pipeline.score(x_test, y_test))).grid(row=0, column=1,
-                                                                                             sticky=Tk.W)
-        Tk.Label(frame_51_result, text="Precision: ").grid(row=1, column=0, sticky=Tk.W)
-        Tk.Label(frame_51_result, text=str(precision_score(y_true=y_test, y_pred=y_pred))).grid(row=1, column=1,
-                                                                                             sticky=Tk.W)
-        Tk.Label(frame_51_result, text="Recall: ").grid(row=2, column=0, sticky=Tk.W)
-        Tk.Label(frame_51_result, text=str(recall_score(y_true=y_test, y_pred=y_pred))).grid(row=2, column=1, sticky=Tk.W)
-        Tk.Label(frame_51_result, text="F-value: ").grid(row=3, column=0, sticky=Tk.W)
-        Tk.Label(frame_51_result, text=str(f1_score(y_true=y_test, y_pred=y_pred))).grid(row=3, column=1, sticky=Tk.W)
-
-        # 第5.2页 测试集展示
-        frame_test = Tk.Frame(page_52)
-        frame_test.pack(fill='x', expand=1, padx=15, pady=15)
-        figure_test = Figure(figsize=(4, 4), dpi=100)
-        subplot_test = figure_test.add_subplot(111)
-        subplot_test.set_title('Breast Cancer Testing')
-        figure_test.tight_layout()
-
-        x1_min, x1_max = x_test_r[:, 0].min() - 1, x_test_r[:, 0].max() + 1
-        x2_min, x2_max = x_test_r[:, 1].min() - 1, x_test_r[:, 1].max() + 1
-        xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
-        yy = self.evaluator_svm.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
-        yy = yy.reshape(xx1.shape)
-        subplot_test.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
-        subplot_test.scatter(x_test_r[:, 0], x_test_r[:, 1], c=y_test, cmap=plt.cm.Paired)
-        self.attach_figure(figure_test, frame_test)
-
-        # 第5.2页 测试性能指标 precision recall f_value
-        y_pred = self.evaluator_svm.pipeline.predict(x_test)
-        frame_52_matrix = Tk.Frame(page_52)
-        frame_52_matrix.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
-        figure_52_matrix = Figure(figsize=(4, 4), dpi=100)
-        subplot_52_matrix = figure_52_matrix.add_subplot(111)
-
-        confmat = confusion_matrix(y_true=y_test, y_pred=y_pred)
-        subplot_52_matrix.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
-        for i in range(confmat.shape[0]):
-            for j in range(confmat.shape[1]):
-                subplot_52_matrix.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
-
-        subplot_52_matrix.set_xlabel('predicted label')
-        subplot_52_matrix.set_ylabel('true label')
-        self.attach_figure(figure_52_matrix, frame_52_matrix)
-
-        frame_52_result = Tk.Frame(page_52)
-        frame_52_result.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
-        Tk.Label(frame_52_result, text="Accuracy: ").grid(row=0, column=0, sticky=Tk.W)
-        Tk.Label(frame_52_result, text=str(self.evaluator_svm.pipeline.score(x_test, y_test))).grid(row=0, column=1,
-                                                                                             sticky=Tk.W)
-        Tk.Label(frame_52_result, text="Precision: ").grid(row=1, column=0, sticky=Tk.W)
-        Tk.Label(frame_52_result, text=str(precision_score(y_true=y_test, y_pred=y_pred))).grid(row=1, column=1,
-                                                                                             sticky=Tk.W)
-        Tk.Label(frame_52_result, text="Recall: ").grid(row=2, column=0, sticky=Tk.W)
-        Tk.Label(frame_52_result, text=str(recall_score(y_true=y_test, y_pred=y_pred))).grid(row=2, column=1, sticky=Tk.W)
-        Tk.Label(frame_52_result, text="F-value: ").grid(row=3, column=0, sticky=Tk.W)
-        Tk.Label(frame_52_result, text=str(f1_score(y_true=y_test, y_pred=y_pred))).grid(row=3, column=1, sticky=Tk.W)
-
-        # 第5.3页 测试集展示
-        frame_test = Tk.Frame(page_53)
-        frame_test.pack(fill='x', expand=1, padx=15, pady=15)
-        figure_test = Figure(figsize=(4, 4), dpi=100)
-        subplot_test = figure_test.add_subplot(111)
-        subplot_test.set_title('Breast Cancer Testing')
-        figure_test.tight_layout()
-
-        x1_min, x1_max = x_test_r[:, 0].min() - 1, x_test_r[:, 0].max() + 1
-        x2_min, x2_max = x_test_r[:, 1].min() - 1, x_test_r[:, 1].max() + 1
-        xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
-        yy = self.evaluator_rf.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
-        yy = yy.reshape(xx1.shape)
-        subplot_test.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
-        subplot_test.scatter(x_test_r[:, 0], x_test_r[:, 1], c=y_test, cmap=plt.cm.Paired)
-        self.attach_figure(figure_test, frame_test)
-
-        # 第5.3页 测试性能指标 precision recall f_value
-        y_pred = self.evaluator_rf.pipeline.predict(x_test)
-        frame_53_matrix = Tk.Frame(page_53)
-        frame_53_matrix.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
-        figure_53_matrix = Figure(figsize=(4, 4), dpi=100)
-        subplot_53_matrix = figure_53_matrix.add_subplot(111)
-
-        confmat = confusion_matrix(y_true=y_test, y_pred=y_pred)
-        subplot_53_matrix.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
-        for i in range(confmat.shape[0]):
-            for j in range(confmat.shape[1]):
-                subplot_53_matrix.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
-
-        subplot_53_matrix.set_xlabel('predicted label')
-        subplot_53_matrix.set_ylabel('true label')
-        self.attach_figure(figure_53_matrix, frame_53_matrix)
-
-        frame_53_result = Tk.Frame(page_53)
-        frame_53_result.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
-        Tk.Label(frame_53_result, text="Accuracy: ").grid(row=0, column=0, sticky=Tk.W)
-        Tk.Label(frame_53_result, text=str(self.evaluator_rf.pipeline.score(x_test, y_test))).grid(row=0, column=1,
-                                                                                                 sticky=Tk.W)
-        Tk.Label(frame_53_result, text="Precision: ").grid(row=1, column=0, sticky=Tk.W)
-        Tk.Label(frame_53_result, text=str(precision_score(y_true=y_test, y_pred=y_pred))).grid(row=1, column=1,
-                                                                                             sticky=Tk.W)
-        Tk.Label(frame_53_result, text="Recall: ").grid(row=2, column=0, sticky=Tk.W)
-        Tk.Label(frame_53_result, text=str(recall_score(y_true=y_test, y_pred=y_pred))).grid(row=2, column=1, sticky=Tk.W)
-        Tk.Label(frame_53_result, text="F-value: ").grid(row=3, column=0, sticky=Tk.W)
-        Tk.Label(frame_53_result, text=str(f1_score(y_true=y_test, y_pred=y_pred))).grid(row=3, column=1, sticky=Tk.W)
-
-        # 第2页 1.学习曲线
-        evaluator_lcurve = CancerEvaluator()
-        train_sizes, train_scores, test_scores = learning_curve(estimator=evaluator_lcurve.pipeline,
-                                                                X=x_train,
-                                                                y=y_train,
-                                                                train_sizes=np.linspace(0.1, 1.0, 10), cv=10, n_jobs=1)
-
-        train_mean = np.mean(train_scores, axis=1)
-        train_std = np.std(train_scores, axis=1)
-        test_mean = np.mean(test_scores, axis=1)
-        test_std = np.std(test_scores, axis=1)
-        frame_lcurve = Tk.Frame(page_2)
-        frame_lcurve.pack(fill="x", expand=1, padx=15, pady=15)
-        figure_lcurve = Figure(figsize=(6, 6), dpi=100)
-        subplot_lcurve = figure_lcurve.add_subplot(111)
-        subplot_lcurve.plot(train_sizes, train_mean, color="blue", marker='o', markersize=5,
-                            label="training accuracy")
-        subplot_lcurve.fill_between(train_sizes, train_mean + train_std, train_mean - train_std, alpha=0.15,
-                                    color="blue")
-        subplot_lcurve.plot(train_sizes, test_mean, color='green', linestyle='--', marker='s', markersize=5,
-                            label="cross-validation accuracy")
-        subplot_lcurve.fill_between(train_sizes, test_mean + test_std, test_mean - test_std, alpha=0.15,
-                                    color="green")
-        subplot_lcurve.grid()
-        subplot_lcurve.set_xlabel("Number of training samples")
-        subplot_lcurve.set_ylabel("Accuracy")
-        subplot_lcurve.legend(loc="lower right")
-        subplot_lcurve.set_ylim([0.8, 1.0])
-        self.attach_figure(figure_lcurve, frame_lcurve)
-
-        # 第3页 验证曲线
-        evaluator_vcurve = CancerEvaluator(clf = SVC(kernel='rbf', probability=True, random_state=1))
-        param_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
-        train_scores, test_scores = validation_curve(estimator=evaluator_vcurve.pipeline,
-                                                     X=x_train, y=y_train,
-                                                     param_name='clf__gamma',
-                                                     param_range=param_range, cv=10)
-
-        train_mean = np.mean(train_scores, axis=1)
-        train_std = np.std(train_scores, axis=1)
-        test_mean = np.mean(test_scores, axis=1)
-        test_std = np.std(test_scores, axis=1)
-
-        frame_vcurve = Tk.Frame(page_3)
-        frame_vcurve.pack(fill='x', expand=1, padx=15, pady=15)
-        figure_vcurve = Figure(figsize=(6, 6), dpi=100)
-        subplot_vcurve = figure_vcurve.add_subplot(111)
-
-        subplot_vcurve.plot(param_range, train_mean, color='blue', marker='o', markersize=5,
-                            label='training accuracy')
-        subplot_vcurve.fill_between(param_range, train_mean + train_std, train_mean - train_std, alpha=0.15,
-                                    color='blue')
-        subplot_vcurve.plot(param_range, test_mean, color='green', linestyle='--', marker='s', markersize=5,
-                            label='cross-validation accuracy')
-        subplot_vcurve.fill_between(param_range, test_mean + test_std, test_mean - test_std, alpha=0.15,
-                                    color='green')
-
-        subplot_vcurve.grid()
-        subplot_vcurve.set_xscale('log')
-        subplot_vcurve.legend(loc='lower right')
-        subplot_vcurve.set_xlabel('Parameter C')
-        subplot_vcurve.set_ylabel('Accuracy')
-        subplot_vcurve.set_ylim([0.91, 1.0])
-        self.attach_figure(figure_vcurve, frame_vcurve)
-
-        # 第4页 ROC&AUC
-        evaluator_roc = CancerEvaluator(clf = SVC(kernel='rbf', probability=True, random_state=1))
-        frame_roc = Tk.Frame(page_4)
-        frame_roc.pack(fill='x', expand=1, padx=15, pady=15)
-        cv = StratifiedKFold(y_train, n_folds=3, random_state=1)
-        figure_roc = Figure(figsize=(6, 6), dpi=100)
-        subplot_roc = figure_roc.add_subplot(111)
-
-        mean_tpr = 0.0
-        mean_fpr = np.linspace(0, 1, 100)
-
-        for i, (train, test) in enumerate(cv):
-            evaluator_roc.load_data(x_train, y_train)
-            probas = evaluator_roc.pipeline.fit(x_train[train], y_train[train]).predict_proba(x_train[test])
-            fpr, tpr, thresholds = roc_curve(y_train[test], probas[:, 1], pos_label=1)
-            mean_tpr += interp(mean_fpr, fpr, tpr)
-            mean_tpr[0] = 0.0
-            roc_auc = auc(fpr, tpr)
-            subplot_roc.plot(fpr, tpr, linewidth=1, label='ROC fold %d (area = %0.2f)' % (i + 1, roc_auc))
-
-        subplot_roc.plot([0, 1], [0, 1], linestyle='--', color=(0.6, 0.6, 0.6), label='random guessing')
-
-        mean_tpr /= len(cv)
-        mean_tpr[-1] = 1.0
-        mean_auc = auc(mean_fpr, mean_tpr)
-        subplot_roc.plot(mean_fpr, mean_tpr, 'k--', label='mean ROC (area = %0.2f)' % mean_auc, lw=2)
-        subplot_roc.plot([0, 0, 1], [0, 1, 1], lw=2, linestyle=':', color='black', label='perfect performance')
-        subplot_roc.set_xlim([-0.05, 1.05])
-        subplot_roc.set_ylim([-0.05, 1.05])
-        subplot_roc.set_xlabel('false positive rate')
-        subplot_roc.set_ylabel('true positive rate')
-        subplot_roc.set_title('Receiver Operator Characteristic')
-        subplot_roc.legend(loc="lower right")
-        self.attach_figure(figure_roc, frame_roc)
+        # 第5页 ROC&AUC
+        clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
+        RocAucFrame(page_5, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
 
         # 第6页，GridSearchCV
-        evaluator_gs = CancerEvaluator(clf = SVC(kernel='rbf', probability=True, random_state=1))
-        evaluator_gs.pipeline.named_steps['clf'] = SVC(random_state=1)
-        frame_linear_param = Tk.Frame(page_6)
-        frame_linear_param.pack(fill='x', expand=1, padx=15, pady=15)
-        figure_gs = Figure(figsize=(6, 4), dpi=100)
-        subplot_linear_param = figure_gs.add_subplot(111)
-        figure_gs.tight_layout()
-        subplot_linear_param.set_xscale('log')
-        subplot_linear_param.set_ylim([0.5, 1.0])
-        subplot_linear_param.set_xlabel("C")
-        subplot_linear_param.set_ylabel("Accuracy")
-        subplot_linear_param.set_title("GridSearchCV on parameter C in SVM with linear-kernel")
-
-        param_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
-        param_grid = [{'clf__C': param_range, 'clf__kernel': ['linear']},
-                      {'clf__C': param_range, 'clf__gamma': param_range, 'clf__kernel': ['rbf']}]
-        gs = GridSearchCV(estimator=evaluator_gs.pipeline, param_grid=param_grid, scoring='accuracy', cv=10,
-                          n_jobs=-1)
-        gs = gs.fit(x_train, y_train)
-        y_true, y_pred = y_test, gs.predict(x_test)
-
-        lieanr_end = len(param_range)
-        rbf_end = lieanr_end + len(param_range) ** 2
-        subplot_linear_param.plot(map(lambda e: e[0]['clf__C'], gs.grid_scores_[0:lieanr_end]),
-                                  map(lambda e: e[1], gs.grid_scores_[0:lieanr_end]),
-                                  linewidth=1, label='svm_linear', color="blue", marker='o', markersize=5)
-        subplot_linear_param.grid()
-        self.attach_figure(figure_gs, frame_linear_param)
-
-        frame_rbf_param = Tk.Frame(page_6)
-        frame_rbf_param.pack(fill='x', expand=1, padx=15, pady=15)
-        scrollbar = Tk.Scrollbar(frame_rbf_param)
-        scrollbar.pack(side=Tk.RIGHT, fill=Tk.Y)
-        text_rbf_param = Tk.Text(frame_rbf_param, width=800, wrap='none', yscrollcommand=scrollbar.set)
-        text_rbf_param.insert(Tk.END, "1. Best parameter: " + str(gs.best_params_) + "\n\n")
-        text_rbf_param.insert(Tk.END, "2. Best parameter performance on testing data.\n\n ")
-        text_rbf_param.insert(Tk.END, classification_report(y_true, y_pred))
-        text_rbf_param.insert(Tk.END, "\n\n")
-        text_rbf_param.insert(Tk.END, "3. All parameter searched by GridSearchCV.\n\n ")
-        log = []
-        for params, mean_score, scores in gs.grid_scores_:
-            log.append(
-                ["%0.3f" % (mean_score), "(+/-%0.03f)" % (scores.std() * 2), params["clf__C"],
-                 params.has_key("clf__gamma") and params["clf__gamma"] or "",
-                 params["clf__kernel"]])
-        text_rbf_param.insert(Tk.END, tabulate(log, headers=["Accuracy","SD", "C", "gamma", "type"]))
-        text_rbf_param.pack()
-        scrollbar.config(command=text_rbf_param.yview)
+        clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
+        GridSearchCVFrame(page_6, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
 
         # 第7页 t-SNE
-        scaler = StandardScaler()
-        x_train_s = scaler.fit_transform(x_train, y_train) # 经过中心化和归一化的训练数据
-        y_train_s = y_train
-        tsne = TSNE(n_components=2, random_state=0)
-        np.set_printoptions(suppress=True)
-        x_train_s = tsne.fit_transform(x_train_s)
-        frame_tsne = Tk.Frame(page_7)
-        frame_tsne.pack(fill='x', expand=1, padx=15, pady=15)
-        figure_tsne = Figure(figsize=(6, 6), dpi=100)
-        subplot_tsne = figure_tsne.add_subplot(111)
-        subplot_tsne.scatter(x_train_s[:, 0], x_train_s[:, 1], c=y_train_s, cmap=plt.cm.Paired)
-        subplot_tsne.set_title("t-SNE on breast cancer data")
-        self.attach_figure(figure_tsne, frame_tsne)
-
-    # 重新绘制点
-    def plot_point(self, subplot, x):
-        if self.last_line is not None:
-            self.last_line.remove()
-            del self.last_line
-        lines = subplot.plot(x[:, 0], x[:, 1], "ro", label="case")
-        self.last_line = lines.pop(0)
-        subplot.legend(loc='lower right')
-
-    # 根据即特征值，计算归属类别的概率
-    def predict(self, evaluator, slides, strvar_12_prob, figure_12_train, subplot_12_train):
-        x = np.arange(30, dtype='f').reshape((1, 30))
-        for i in range(30):
-            x[0, i] = float(slides[i].get())
-        result = evaluator.predict(x)
-        strvar_12_prob.set("%.2f%%" % (result[0, 1] * 100))  # 恶性肿瘤的概率
-        self.plot_point(subplot_12_train, evaluator.reduce(x))
-        figure_12_train.canvas.draw()
-
-    def predict1(self, trivial):
-        self.predict(self.evaluator_lr, self.slides_11, self.strvar_11_prob, self.figure_11_train,
-                     self.subplot_11_train)
-
-    def predict2(self, trivial):
-        self.predict(self.evaluator_svm, self.slides_12, self.strvar_12_prob, self.figure_12_train,
-                     self.subplot_12_train)
-
-    def predict3(self, trivial):
-        self.predict(self.evaluator_rf, self.slides_13, self.strvar_13_prob, self.figure_13_train,
-                     self.subplot_13_train)
-
-    @staticmethod
-    def attach_figure(figure, frame):
-        canvas = FigureCanvasTkAgg(figure, master=frame)  # 内嵌散点图到UI
-        canvas.show()
-        canvas.get_tk_widget().pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
-        toolbar = NavigationToolbar2TkAgg(canvas, frame)  # 内嵌散点图工具栏到UI
-        toolbar.update()
-        canvas.tkcanvas.pack(side=Tk.TOP, fill=Tk.BOTH, expand=1)
-
+        TSNEFrame(page_7, x_train, y_train, None, None, None).pack(fill=Tk.BOTH)
 
 if __name__ == "__main__":
     master = Tk.Tk()

@@ -30,10 +30,8 @@ class CancerEvaluator:
         self.estimators = [('scl', self.scaler), ('pca', self.pca), ('clf', self.clf)]
         self.pipeline = Pipeline(self.estimators)  # 可以通过pipe.named_steps['pca']来访问PCA对象
 
-    # 载入数据集
-    def load_data(self, x, y):
-        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(x, y, test_size=0.20,
-                                                                                random_state=1)  # 拆分成训练集(80%)和测试集(20%)
+    def load_data(self, x_train, y_train, x_test, y_test):
+        self.x_train, self.y_train, self.x_test, self.y_test = x_train, y_train, x_test, y_test
 
     # 训练模型
     def train(self):
