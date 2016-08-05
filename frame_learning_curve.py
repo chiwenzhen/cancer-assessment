@@ -9,9 +9,7 @@ from sklearn.learning_curve import learning_curve
 class LearningCurveFrame(Tk.Frame):
     def __init__(self, master, x_train, y_train, x_test, y_test, evaluator):
         Tk.Frame.__init__(self, master)
-
-        evaluator_lcurve = evaluator
-        train_sizes, train_scores, test_scores = learning_curve(estimator=evaluator_lcurve.pipeline,
+        train_sizes, train_scores, test_scores = learning_curve(estimator=evaluator.pipeline,
                                                                 X=x_train,
                                                                 y=y_train,
                                                                 train_sizes=np.linspace(0.1, 1.0, 10), cv=10, n_jobs=1)
