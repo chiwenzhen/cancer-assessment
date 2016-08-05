@@ -11,10 +11,9 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 class TestFrame(Tk.Frame):
     def __init__(self, master, x_train, y_train, x_test, y_test, evaluator):
         Tk.Frame.__init__(self, master)
-        self.evaluator = evaluator
-        self.evaluator.load_data(x_train, y_train, x_test, y_test)
-        self.evaluator.train()
-        x_test_r = self.evaluator.reduce(x_test)  # 特征降维
+        evaluator.load_data(x_train, y_train, x_test, y_test)
+        evaluator.train()
+        x_test_r = evaluator.reduce(x_test)  # 特征降维
 
         frame_test = Tk.Frame(self)
         frame_test.pack(fill='x', expand=1, padx=15, pady=15)
@@ -27,14 +26,14 @@ class TestFrame(Tk.Frame):
         x1_min, x1_max = x_test_r[:, 0].min() - 1, x_test_r[:, 0].max() + 1
         x2_min, x2_max = x_test_r[:, 1].min() - 1, x_test_r[:, 1].max() + 1
         xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
-        yy = self.evaluator.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
+        yy = evaluator.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
         yy = yy.reshape(xx1.shape)
         subplot_test.contourf(xx1, xx2, yy, cmap=plt.cm.get_cmap("Paired"), alpha=0.8)
         subplot_test.scatter(x_test_r[:, 0], x_test_r[:, 1], c=y_test, cmap=plt.cm.get_cmap("Paired"))
         self.attach_figure(figure_test, frame_test)
 
         # 第5.1页 测试性能指标 precision recall f_value
-        y_pred = self.evaluator.pipeline.predict(x_test)
+        y_pred = evaluator.pipeline.predict(x_test)
         frame_matrix = Tk.Frame(self)
         frame_matrix.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
         figure_matrix = Figure(figsize=(4, 4), dpi=100)
@@ -53,7 +52,7 @@ class TestFrame(Tk.Frame):
         frame_result = Tk.Frame(self)
         frame_result.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
         Tk.Label(frame_result, text="Accuracy: ").grid(row=0, column=0, sticky=Tk.W)
-        Tk.Label(frame_result, text=str(self.evaluator.pipeline.score(x_test, y_test))).grid(row=0, column=1,
+        Tk.Label(frame_result, text=str(evaluator.pipeline.score(x_test, y_test))).grid(row=0, column=1,
                                                                                              sticky=Tk.W)
         Tk.Label(frame_result, text="Precision: ").grid(row=1, column=0, sticky=Tk.W)
         Tk.Label(frame_result, text=str(precision_score(y_true=y_test, y_pred=y_pred))).grid(row=1, column=1,
