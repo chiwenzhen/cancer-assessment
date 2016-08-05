@@ -10,9 +10,8 @@ class ValidationCurveFrame(Tk.Frame):
     def __init__(self, master, x_train, y_train, x_test, y_test, evaluator):
         Tk.Frame.__init__(self, master)
 
-        evaluator_vcurve = evaluator
         param_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
-        train_scores, test_scores = validation_curve(estimator=evaluator_vcurve.pipeline,
+        train_scores, test_scores = validation_curve(estimator=evaluator.pipeline,
                                                      X=x_train, y=y_train,
                                                      param_name='clf__gamma',
                                                      param_range=param_range, cv=10)
