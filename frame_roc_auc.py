@@ -11,8 +11,6 @@ from scipy import interp
 class RocAucFrame(Tk.Frame):
     def __init__(self, master, x_train, y_train, x_test, y_test, evaluator):
         Tk.Frame.__init__(self, master)
-
-        evaluator_roc = evaluator
         frame_roc = Tk.Frame(self)
         frame_roc.pack(fill='x', expand=1, padx=15, pady=15)
         cv = StratifiedKFold(y_train, n_folds=3, random_state=1)
@@ -23,7 +21,7 @@ class RocAucFrame(Tk.Frame):
         mean_fpr = np.linspace(0, 1, 100)
 
         for i, (train, test) in enumerate(cv):
-            probas = evaluator_roc.pipeline.fit(x_train[train], y_train[train]).predict_proba(x_train[test])
+            probas = evaluator.pipeline.fit(x_train[train], y_train[train]).predict_proba(x_train[test])
             fpr, tpr, thresholds = roc_curve(y_train[test], probas[:, 1], pos_label=1)
             mean_tpr += interp(mean_fpr, fpr, tpr)
             mean_tpr[0] = 0.0
