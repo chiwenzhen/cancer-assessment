@@ -16,12 +16,12 @@ class TestFrame(Tk.Frame):
         self.evaluator.train()
         x_test_r = self.evaluator.reduce(x_test)  # 特征降维
 
-        frame_51_test = Tk.Frame(self)
-        frame_51_test.pack(fill='x', expand=1, padx=15, pady=15)
-        figure_51_test = Figure(figsize=(4, 4), dpi=100)
-        subplot_51_test = figure_51_test.add_subplot(111)
-        subplot_51_test.set_title('Breast Cancer Testing')
-        figure_51_test.tight_layout()
+        frame_test = Tk.Frame(self)
+        frame_test.pack(fill='x', expand=1, padx=15, pady=15)
+        figure_test = Figure(figsize=(4, 4), dpi=100)
+        subplot_test = figure_test.add_subplot(111)
+        subplot_test.set_title('Breast Cancer Testing')
+        figure_test.tight_layout()
 
         h = .02  # step size in the mesh
         x1_min, x1_max = x_test_r[:, 0].min() - 1, x_test_r[:, 0].max() + 1
@@ -29,40 +29,40 @@ class TestFrame(Tk.Frame):
         xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
         yy = self.evaluator.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
         yy = yy.reshape(xx1.shape)
-        subplot_51_test.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
-        subplot_51_test.scatter(x_test_r[:, 0], x_test_r[:, 1], c=y_test, cmap=plt.cm.Paired)
-        self.attach_figure(figure_51_test, frame_51_test)
+        subplot_test.contourf(xx1, xx2, yy, cmap=plt.cm.get_cmap("Paired"), alpha=0.8)
+        subplot_test.scatter(x_test_r[:, 0], x_test_r[:, 1], c=y_test, cmap=plt.cm.get_cmap("Paired"))
+        self.attach_figure(figure_test, frame_test)
 
         # 第5.1页 测试性能指标 precision recall f_value
         y_pred = self.evaluator.pipeline.predict(x_test)
-        frame_51_matrix = Tk.Frame(self)
-        frame_51_matrix.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
-        figure_51_matrix = Figure(figsize=(4, 4), dpi=100)
-        subplot_51_matrix = figure_51_matrix.add_subplot(111)
+        frame_matrix = Tk.Frame(self)
+        frame_matrix.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
+        figure_matrix = Figure(figsize=(4, 4), dpi=100)
+        subplot_matrix = figure_matrix.add_subplot(111)
 
         confmat = confusion_matrix(y_true=y_test, y_pred=y_pred)
-        subplot_51_matrix.matshow(confmat, cmap=plt.cm.Blues, alpha=0.3)
+        subplot_matrix.matshow(confmat, cmap=plt.cm.get_cmap("Blues"), alpha=0.3)
         for i in range(confmat.shape[0]):
             for j in range(confmat.shape[1]):
-                subplot_51_matrix.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
+                subplot_matrix.text(x=j, y=i, s=confmat[i, j], va='center', ha='center')
 
-        subplot_51_matrix.set_xlabel('predicted label')
-        subplot_51_matrix.set_ylabel('true label')
-        self.attach_figure(figure_51_matrix, frame_51_matrix)
+        subplot_matrix.set_xlabel('predicted label')
+        subplot_matrix.set_ylabel('true label')
+        self.attach_figure(figure_matrix, frame_matrix)
 
-        frame_51_result = Tk.Frame(self)
-        frame_51_result.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
-        Tk.Label(frame_51_result, text="Accuracy: ").grid(row=0, column=0, sticky=Tk.W)
-        Tk.Label(frame_51_result, text=str(self.evaluator.pipeline.score(x_test, y_test))).grid(row=0, column=1,
-                                                                                                sticky=Tk.W)
-        Tk.Label(frame_51_result, text="Precision: ").grid(row=1, column=0, sticky=Tk.W)
-        Tk.Label(frame_51_result, text=str(precision_score(y_true=y_test, y_pred=y_pred))).grid(row=1, column=1,
-                                                                                                sticky=Tk.W)
-        Tk.Label(frame_51_result, text="Recall: ").grid(row=2, column=0, sticky=Tk.W)
-        Tk.Label(frame_51_result, text=str(recall_score(y_true=y_test, y_pred=y_pred))).grid(row=2, column=1,
+        frame_result = Tk.Frame(self)
+        frame_result.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
+        Tk.Label(frame_result, text="Accuracy: ").grid(row=0, column=0, sticky=Tk.W)
+        Tk.Label(frame_result, text=str(self.evaluator.pipeline.score(x_test, y_test))).grid(row=0, column=1,
                                                                                              sticky=Tk.W)
-        Tk.Label(frame_51_result, text="F-value: ").grid(row=3, column=0, sticky=Tk.W)
-        Tk.Label(frame_51_result, text=str(f1_score(y_true=y_test, y_pred=y_pred))).grid(row=3, column=1, sticky=Tk.W)
+        Tk.Label(frame_result, text="Precision: ").grid(row=1, column=0, sticky=Tk.W)
+        Tk.Label(frame_result, text=str(precision_score(y_true=y_test, y_pred=y_pred))).grid(row=1, column=1,
+                                                                                             sticky=Tk.W)
+        Tk.Label(frame_result, text="Recall: ").grid(row=2, column=0, sticky=Tk.W)
+        Tk.Label(frame_result, text=str(recall_score(y_true=y_test, y_pred=y_pred))).grid(row=2, column=1,
+                                                                                          sticky=Tk.W)
+        Tk.Label(frame_result, text="F-value: ").grid(row=3, column=0, sticky=Tk.W)
+        Tk.Label(frame_result, text=str(f1_score(y_true=y_test, y_pred=y_pred))).grid(row=3, column=1, sticky=Tk.W)
 
     @staticmethod
     def attach_figure(figure, frame):

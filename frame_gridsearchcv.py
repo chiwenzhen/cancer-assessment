@@ -1,5 +1,4 @@
 # coding=utf-8
-import numpy as np
 import Tkinter as Tk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
@@ -13,8 +12,7 @@ class GridSearchCVFrame(Tk.Frame):
     def __init__(self, master, x_train, y_train, x_test, y_test, evaluator):
         Tk.Frame.__init__(self, master)
 
-        evaluator_gs = evaluator
-        evaluator_gs.pipeline.named_steps['clf'] = SVC(random_state=1)
+        evaluator.pipeline.named_steps['clf'] = SVC(random_state=1)
         frame_linear_param = Tk.Frame(self)
         frame_linear_param.pack(fill='x', expand=1, padx=15, pady=15)
         figure_gs = Figure(figsize=(6, 4), dpi=100)
@@ -29,7 +27,7 @@ class GridSearchCVFrame(Tk.Frame):
         param_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]
         param_grid = [{'clf__C': param_range, 'clf__kernel': ['linear']},
                       {'clf__C': param_range, 'clf__gamma': param_range, 'clf__kernel': ['rbf']}]
-        gs = GridSearchCV(estimator=evaluator_gs.pipeline, param_grid=param_grid, scoring='accuracy', cv=10,
+        gs = GridSearchCV(estimator=evaluator.pipeline, param_grid=param_grid, scoring='accuracy', cv=10,
                           n_jobs=-1)
         gs = gs.fit(x_train, y_train)
         y_true, y_pred = y_test, gs.predict(x_test)
@@ -54,7 +52,9 @@ class GridSearchCVFrame(Tk.Frame):
         log = []
         for params, mean_score, scores in gs.grid_scores_:
             log.append(
-                ["%0.3f" % (mean_score), "(+/-%0.03f)" % (scores.std() * 2), params["clf__C"],
+                ["%0.3f" % (mean_score),
+                 "(+/-%0.03f)" % (scores.std() * 2),
+                 params["clf__C"],
                  params.has_key("clf__gamma") and params["clf__gamma"] or "",
                  params["clf__kernel"]])
         text_rbf_param.insert(Tk.END, tabulate(log, headers=["Accuracy", "SD", "C", "gamma", "type"]))

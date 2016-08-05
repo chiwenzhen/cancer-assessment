@@ -18,8 +18,8 @@ class TrainFrame(Tk.Frame):
         frame_train.pack(fill=Tk.BOTH, expand=1, padx=15, pady=15)
         self.figure_train = Figure(figsize=(5, 4), dpi=100)
         self.subplot_train = self.figure_train.add_subplot(111)
-        self.figure_train.tight_layout()  # 一定要放在add_subplot函数之后，否则崩溃
         self.subplot_train.set_title('Breast Cancer Evaluation Model')
+        self.figure_train.tight_layout()  # 一定要放在add_subplot函数之后，否则崩溃
         self.last_line = None
 
         h = .02  # step size in the mesh
@@ -28,8 +28,8 @@ class TrainFrame(Tk.Frame):
         xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
         yy = self.evaluator.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
         yy = yy.reshape(xx1.shape)
-        self.subplot_train.contourf(xx1, xx2, yy, cmap=plt.cm.Paired, alpha=0.8)
-        self.subplot_train.scatter(x_train_r[:, 0], x_train_r[:, 1], c=y_train, cmap=plt.cm.Paired)
+        self.subplot_train.contourf(xx1, xx2, yy, cmap=plt.cm.get_cmap("Paired"), alpha=0.8)
+        self.subplot_train.scatter(x_train_r[:, 0], x_train_r[:, 1], c=y_train, cmap=plt.cm.get_cmap("Paired"))
         self.attach_figure(self.figure_train, frame_train)
 
         # 第1.1页 概率输出框

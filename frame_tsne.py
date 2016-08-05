@@ -21,7 +21,7 @@ class TSNEFrame(Tk.Frame):
         frame_tsne.pack(fill='x', expand=1, padx=15, pady=15)
         figure_tsne = Figure(figsize=(6, 6), dpi=100)
         subplot_tsne = figure_tsne.add_subplot(111)
-        subplot_tsne.scatter(x_train_s[:, 0], x_train_s[:, 1], c=y_train_s, cmap=plt.cm.Paired)
+        subplot_tsne.scatter(x_train_s[:, 0], x_train_s[:, 1], c=y_train_s, cmap=plt.cm.get_cmap("Paired"))
         subplot_tsne.set_title("t-SNE on breast cancer data")
         self.attach_figure(figure_tsne, frame_tsne)
 
