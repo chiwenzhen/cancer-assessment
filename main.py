@@ -89,15 +89,12 @@ class App:
         TrainFrame(page_13, x_train, y_train, x_test, y_test, clf_rf).pack(fill=Tk.BOTH)
 
         # 第2.1页 Logistic Regression Testing
-        clf_lr = CancerEvaluator()
         TestFrame(page_21, x_train, y_train, x_test, y_test, clf_lr).pack(fill=Tk.BOTH)
 
         # 第2.2页 Support Vector Machine Testing
-        clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
         TestFrame(page_22, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
 
         # 第2.3页 Random Forest Testing
-        clf_rf = CancerEvaluator(clf=RandomForestClassifier())
         TestFrame(page_23, x_train, y_train, x_test, y_test, clf_rf).pack(fill=Tk.BOTH)
 
         # 第3页 学习曲线

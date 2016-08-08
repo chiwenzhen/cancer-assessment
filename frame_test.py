@@ -11,8 +11,8 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 class TestFrame(Tk.Frame):
     def __init__(self, master, x_train, y_train, x_test, y_test, evaluator):
         Tk.Frame.__init__(self, master)
-        evaluator.load_data(x_train, y_train, x_test, y_test)
-        evaluator.train()
+        # evaluator.load_data(x_train, y_train, x_test, y_test)
+        # evaluator.train()
         x_test_r = evaluator.reduce(x_test)  # 特征降维
 
         frame_test = Tk.Frame(self)
