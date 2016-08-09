@@ -85,45 +85,45 @@ class App:
         clf = CancerEvaluator(clf=SVC(probability=True, random_state=1))
         MainFrame(page_0, x_train, y_train, x_test, y_test, clf).pack(fill=Tk.BOTH)
 
-        # 第1.1页 LR训练
-        clf_lr = CancerEvaluator()
-        TrainFrame(page_11, x_train, y_train, x_test, y_test, clf_lr).pack(fill=Tk.BOTH)
-
-        # 第1.2页 SVM训练
-        clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
-        TrainFrame(page_12, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
-
-        # 第1.3页 随机森林训练
-        clf_rf = CancerEvaluator(clf=RandomForestClassifier(n_estimators=50))
-        TrainFrame(page_13, x_train, y_train, x_test, y_test, clf_rf).pack(fill=Tk.BOTH)
-
-        # 第2.1页 LR测试
-        TestFrame(page_21, x_train, y_train, x_test, y_test, clf_lr).pack(fill=Tk.BOTH)
-
-        # 第2.2页 SVM测试
-        TestFrame(page_22, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
-
-        # 第2.3页 随机森林测试
-        TestFrame(page_23, x_train, y_train, x_test, y_test, clf_rf).pack(fill=Tk.BOTH)
-
-        # 第3页 学习曲线
-        clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
-        LearningCurveFrame(page_3, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
-
-        # 第4页 验证曲线
-        clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
-        ValidationCurveFrame(page_4, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
-
-        # 第5页 ROC&AUC
-        clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
-        RocAucFrame(page_5, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
-
-        # 第6页，GridSearchCV
-        clf_svm = CancerEvaluator(clf=SVC(random_state=1))
-        GridSearchCVFrame(page_6, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
-
-        # 第7页 t-SNE
-        TSNEFrame(page_7, x_train, y_train, None, None, None).pack(fill=Tk.BOTH)
+        # # 第1.1页 LR训练
+        # clf_lr = CancerEvaluator()
+        # TrainFrame(page_11, x_train, y_train, x_test, y_test, clf_lr).pack(fill=Tk.BOTH)
+        #
+        # # 第1.2页 SVM训练
+        # clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
+        # TrainFrame(page_12, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
+        #
+        # # 第1.3页 随机森林训练
+        # clf_rf = CancerEvaluator(clf=RandomForestClassifier(n_estimators=50))
+        # TrainFrame(page_13, x_train, y_train, x_test, y_test, clf_rf).pack(fill=Tk.BOTH)
+        #
+        # # 第2.1页 LR测试
+        # TestFrame(page_21, x_train, y_train, x_test, y_test, clf_lr).pack(fill=Tk.BOTH)
+        #
+        # # 第2.2页 SVM测试
+        # TestFrame(page_22, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
+        #
+        # # 第2.3页 随机森林测试
+        # TestFrame(page_23, x_train, y_train, x_test, y_test, clf_rf).pack(fill=Tk.BOTH)
+        #
+        # # 第3页 学习曲线
+        # clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
+        # LearningCurveFrame(page_3, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
+        #
+        # # 第4页 验证曲线
+        # clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
+        # ValidationCurveFrame(page_4, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
+        #
+        # # 第5页 ROC&AUC
+        # clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
+        # RocAucFrame(page_5, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
+        #
+        # # 第6页，GridSearchCV
+        # clf_svm = CancerEvaluator(clf=SVC(random_state=1))
+        # GridSearchCVFrame(page_6, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
+        #
+        # # 第7页 t-SNE
+        # TSNEFrame(page_7, x_train, y_train, None, None, None).pack(fill=Tk.BOTH)
 
 if __name__ == "__main__":
     master = Tk.Tk()

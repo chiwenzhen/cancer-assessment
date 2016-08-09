@@ -140,28 +140,6 @@ class MainFrame(Tk.Frame):
                 new_score = gs.best_score_
                 self.new_estimator = gs.best_estimator_
 
-        #########################################################
-        # print("Best parameters set found on development set:")
-        # print()
-        # print(gs.best_params_)
-        # print()
-        # print("Grid scores on development set:")
-        # print()
-        # for params, mean_score, scores in gs.grid_scores_:
-        #     print("%f (+/-%0.03f) for %r"
-        #           % (mean_score, scores.std() * 2, params))
-        # print()
-        #
-        # print("Detailed classification report:")
-        # print()
-        # print("The model is trained on the full development set.")
-        # print("The scores are computed on the full evaluation set.")
-        # print()
-        # y_true, y_pred = self.y_test, gs.predict(self.x_test)
-        # print(classification_report(y_true, y_pred))
-        # print()
-        #########################################################
-
         if new_score > old_score:
             self.label_tips.config(text='New model improvement: %.2f%%' % (100.0 * (new_score - old_score) / old_score))
             self.button_opt.config(text='应用', command=self.apply_new_estimator)
@@ -177,7 +155,9 @@ class MainFrame(Tk.Frame):
               " " +
               "applying new models:\n old_model=%s \n new_model=%s" % (self.evaluator.pipeline, self.new_estimator))
         self.evaluator.pipeline = self.new_estimator
+        self.last_line = None
         self.subplot_train.cla()
+        self.predict(None)
         self.yy = self.evaluator.pipeline.named_steps['clf'].predict(np.c_[self.xx1.ravel(), self.xx2.ravel()])
         self.yy = self.yy.reshape(self.xx1.shape)
         self.subplot_train.contourf(self.xx1, self.xx2, self.yy, cmap=plt.cm.get_cmap("Paired"), alpha=0.8)
