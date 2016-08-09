@@ -76,16 +76,8 @@ class MainFrame(Tk.Frame):
         canv.pack(side=Tk.LEFT, expand=Tk.YES, fill=Tk.BOTH)
         feature_num = x_train.shape[1]
         self.slides = [None] * feature_num  # 滑动条个数为特征个数
-        feature_names = ["radius", "texture", "perimeter", "area", "smoothness", "compactness", "concavity", "concave",
-                         "symmetry", "fractal",
-                         "radius SE", "texture SE", "perimeter SE", "area SE", "smoothness SE", "compactness SE",
-                         "concavity SE", "concave SE",
-                         "symmetry SE", "fractal SE",
-                         "radius MAX", "texture MAX", "perimeter MAX", "area MAX", "smoothness MAX", "compactness MAX",
-                         "concavity MAX", "concave MAX",
-                         "symmetry MAX", "fractal MAX"]
         for i in range(feature_num):
-            canv.create_window(60, (i + 1) * 40, window=Tk.Label(canv, text=str(i + 1) + ". " + feature_names[i]))
+            canv.create_window(60, (i + 1) * 40, window=Tk.Label(canv, text=str(i + 1) + ". "))
             min_x = np.min(x_train[:, i])
             max_x = np.max(x_train[:, i])
             self.slides[i] = Tk.Scale(canv, from_=min_x, to=max_x, resolution=(max_x - min_x) / 100.0,
