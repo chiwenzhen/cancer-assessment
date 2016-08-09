@@ -18,6 +18,7 @@ from frame_validation_curve import ValidationCurveFrame
 from frame_roc_auc import RocAucFrame
 from frame_gridsearchcv import GridSearchCVFrame
 from frame_tsne import TSNEFrame
+from frame_main import MainFrame
 
 
 class App:
@@ -38,6 +39,9 @@ class App:
 
         notebook = Notebook(root)  # 添加标签页
         notebook.pack(fill=Tk.BOTH)
+
+        page_0 = Tk.Frame(notebook)
+        notebook.add(page_0, text="Main  ")
 
         page_1 = Tk.Frame(notebook)
         notebook.add(page_1, text="Training  ")
@@ -76,25 +80,29 @@ class App:
         page_7 = Tk.Frame(notebook)
         notebook.add(page_7, text="t-SNE")
 
-        # 第1.1页 Logistic Regression Training
+        # 第0页 主页
+        clf = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
+        MainFrame(page_0, x_train, y_train, x_test, y_test, clf).pack(fill=Tk.BOTH)
+
+        # 第1.1页 LR训练
         clf_lr = CancerEvaluator()
         TrainFrame(page_11, x_train, y_train, x_test, y_test, clf_lr).pack(fill=Tk.BOTH)
 
-        # 第1.2页 Support Vector Machine Training
+        # 第1.2页 SVM训练
         clf_svm = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
         TrainFrame(page_12, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
 
-        # 第1.3页 Random Forest Training
-        clf_rf = CancerEvaluator(clf=RandomForestClassifier())
+        # 第1.3页 随机森林训练
+        clf_rf = CancerEvaluator(clf=RandomForestClassifier(n_estimators=50))
         TrainFrame(page_13, x_train, y_train, x_test, y_test, clf_rf).pack(fill=Tk.BOTH)
 
-        # 第2.1页 Logistic Regression Testing
+        # 第2.1页 LR测试
         TestFrame(page_21, x_train, y_train, x_test, y_test, clf_lr).pack(fill=Tk.BOTH)
 
-        # 第2.2页 Support Vector Machine Testing
+        # 第2.2页 SVM测试
         TestFrame(page_22, x_train, y_train, x_test, y_test, clf_svm).pack(fill=Tk.BOTH)
 
-        # 第2.3页 Random Forest Testing
+        # 第2.3页 随机森林测试
         TestFrame(page_23, x_train, y_train, x_test, y_test, clf_rf).pack(fill=Tk.BOTH)
 
         # 第3页 学习曲线
