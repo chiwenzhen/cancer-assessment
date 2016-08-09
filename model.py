@@ -17,7 +17,7 @@ from sklearn.externals import joblib
 from sklearn.svm import SVC
 
 
-class CancerEvaluator:
+class Evaluator:
     def __init__(self, scaler=StandardScaler(), pca=PCA(n_components=2),
                  clf=LogisticRegression(penalty='l2', random_state=1)):
         self.x_train = None
@@ -78,10 +78,22 @@ class CancerEvaluator:
         return self.pipeline
 
 
-# 载入数据
+# 载入乳腺肿瘤数据
 class CancerDataSet:
-    def __init__(self, data_path, test_percent=0.2):
+    def __init__(self, data_path="wdbc.data", test_percent=0.2):
         df = pd.read_csv(data_path, header=None)
+        self.x = df.loc[:, 2:].values  # 训练集特征
+        y = df.loc[:, 1].values  # 训练集标签
+        le = LabelEncoder()
+        self.y = le.fit_transform(y)  # 把字符串标签转换为整数，恶性M-1，良性B-0
+        self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=test_percent,
+                                                                                random_state=1)  # 拆分成训练集(80%)和测试集(20%)
+
+
+# 载入胎心监护数据
+class CardiotocographyDataSet:
+    def __init__(self, data_path="CTG.xls", test_percent=0.2):
+        df = pd.read_excel(data_path, header=2, sheetname=1)
         self.x = df.loc[:, 2:].values  # 训练集特征
         y = df.loc[:, 1].values  # 训练集标签
         le = LabelEncoder()

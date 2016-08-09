@@ -8,7 +8,7 @@ chiwenzhen
 import sys
 import Tkinter as Tk
 from ttk import Notebook
-from model import CancerEvaluator, CancerDataSet
+from model import Evaluator, CancerDataSet, CardiotocographyDataSet
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
@@ -25,7 +25,7 @@ from frame_main import MainFrame
 class App:
     def __init__(self, root):
         # 数据载入和分类器训练
-        self.dataset = CancerDataSet(data_path="wdbc.data")
+        self.dataset = CardiotocographyDataSet()
         x_train = self.dataset.x_train
         y_train = self.dataset.y_train
         x_test = self.dataset.x_test
@@ -82,7 +82,7 @@ class App:
         notebook.add(page_7, text="t-SNE")
 
         # 第0页 主页
-        clf = CancerEvaluator(clf=SVC(probability=True, random_state=1))
+        clf = Evaluator(clf=SVC(probability=True, random_state=1))
         MainFrame(page_0, x_train, y_train, x_test, y_test, clf).pack(fill=Tk.BOTH)
 
         # # 第1.1页 LR训练
