@@ -79,7 +79,7 @@ class CancerEvaluator:
 
 
 # 载入数据
-class DataSet:
+class CancerDataSet:
     def __init__(self, data_path, test_percent=0.2):
         df = pd.read_csv(data_path, header=None)
         self.x = df.loc[:, 2:].values  # 训练集特征
