@@ -9,6 +9,7 @@ import sys
 import Tkinter as Tk
 from ttk import Notebook
 from model import CancerEvaluator, DataSet
+from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
 from frame_train import TrainFrame
@@ -81,7 +82,7 @@ class App:
         notebook.add(page_7, text="t-SNE")
 
         # 第0页 主页
-        clf = CancerEvaluator(clf=SVC(kernel='rbf', probability=True, random_state=1))
+        clf = CancerEvaluator(clf=SVC(probability=True, random_state=1))
         MainFrame(page_0, x_train, y_train, x_test, y_test, clf).pack(fill=Tk.BOTH)
 
         # 第1.1页 LR训练

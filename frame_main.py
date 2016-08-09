@@ -1,12 +1,21 @@
 # coding=utf-8
-import numpy as np
 import Tkinter as Tk
+import tkMessageBox as MsbBox
+import time
+
 import matplotlib.pyplot as plt
+import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from matplotlib.figure import Figure
+from sklearn import cross_validation
 from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import classification_report
-import tkMessageBox as MsbBox
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+from sklearn.pipeline import Pipeline
 
 
 class MainFrame(Tk.Frame):
@@ -17,14 +26,16 @@ class MainFrame(Tk.Frame):
         self.y_train = y_train
         self.x_test = x_test
         self.y_test = y_test
-        self.best_estimator = None
+        self.new_estimator = None
         self.evaluator.load_data(x_train, y_train, x_test, y_test)
         self.evaluator.train()
-        x_train_r = self.evaluator.reduce(x_train)  # 特征降维
+        self.x_train_r = self.evaluator.reduce(x_train)  # 特征降维
 
         # 0. 优化按钮
-        button_opt = Tk.Button(self, text="优化", command=self.optimize_parameter)
-        button_opt.pack(side=Tk.TOP, anchor=Tk.E)
+        self.button_opt = Tk.Button(self, text="优化", command=self.optimize_parameter)
+        self.button_opt.pack(side=Tk.TOP, anchor=Tk.E)
+        self.label_tips = Tk.Label(self)
+        self.label_tips.pack(side=Tk.TOP, anchor=Tk.E)
 
         # 1. 散点图
         frame_train = Tk.Frame(self)
@@ -36,13 +47,15 @@ class MainFrame(Tk.Frame):
         self.last_line = None
 
         h = .02  # step size in the mesh
-        x1_min, x1_max = x_train_r[:, 0].min() - 1, x_train_r[:, 0].max() + 1
-        x2_min, x2_max = x_train_r[:, 1].min() - 1, x_train_r[:, 1].max() + 1
-        xx1, xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
-        yy = self.evaluator.clf.predict(np.c_[xx1.ravel(), xx2.ravel()])
-        yy = yy.reshape(xx1.shape)
-        self.subplot_train.contourf(xx1, xx2, yy, cmap=plt.cm.get_cmap("Paired"), alpha=0.8)
-        self.subplot_train.scatter(x_train_r[:, 0], x_train_r[:, 1], c=y_train, cmap=plt.cm.get_cmap("Paired"))
+        x1_min, x1_max = self.x_train_r[:, 0].min() - 1, self.x_train_r[:, 0].max() + 1
+        x2_min, x2_max = self.x_train_r[:, 1].min() - 1, self.x_train_r[:, 1].max() + 1
+        self.xx1, self.xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
+        self.yy = self.evaluator.clf.predict(np.c_[self.xx1.ravel(), self.xx2.ravel()])
+        self.yy = self.yy.reshape(self.xx1.shape)
+        self.subplot_train.contourf(self.xx1, self.xx2, self.yy, cmap=plt.cm.get_cmap("Paired"), alpha=0.8)
+        self.subplot_train.scatter(self.x_train_r[:, 0], self.x_train_r[:, 1], c=y_train,
+                                   cmap=plt.cm.get_cmap("Paired"))
+        print(self.evaluator.pipeline.named_steps['clf'])
         self.attach_figure(self.figure_train, frame_train)
 
         # 2. 概率输出框
@@ -110,53 +123,106 @@ class MainFrame(Tk.Frame):
 
     # 搜索最优参数
     def optimize_parameter(self):
-        param_C_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0,
-                         self.evaluator.pipeline.named_steps["clf"].C]
-        param_gamma_range = [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0,
-                             self.evaluator.pipeline.named_steps["clf"].gamma]
-        param_grid = [{'clf__C': param_C_range, 'clf__gamma': param_gamma_range, 'clf__kernel': ['rbf']}]
-        gs = GridSearchCV(estimator=self.evaluator.pipeline, param_grid=param_grid, scoring='accuracy', cv=10,
-                          n_jobs=-1)
-        gs = gs.fit(self.x_train, self.y_train)
-        self.best_estimator = gs.best_estimator_
-        new_accuracy = gs.best_score_
+        # 计算旧模型（即初始模型）的交叉验证精度
+        old_scores = cross_validation.cross_val_score(estimator=self.evaluator.pipeline, X=self.x_train, y=self.y_train,
+                                                      scoring='accuracy',
+                                                      cv=10, n_jobs=-1)
+        old_score = np.mean(old_scores)
+
+        # 计算新模型们中最好的交叉验证精度
+        new_score = -1.0
+        self.new_estimator = None
+        for clf, param_grid in ParameterSettings.possible_models:
+            estimator = Pipeline([('scl', StandardScaler()), ('pca', PCA(n_components=2)), ('clf', clf)])
+            gs = GridSearchCV(estimator=estimator, param_grid=param_grid, scoring='accuracy', cv=10, n_jobs=-1)
+            gs = gs.fit(self.x_train, self.y_train)
+            if new_score < gs.best_score_:
+                new_score = gs.best_score_
+                self.new_estimator = gs.best_estimator_
 
         #########################################################
-        print("Best parameters set found on development set:")
-        print()
-        print(gs.best_params_)
-        print()
-        print("Grid scores on development set:")
-        print()
-        for params, mean_score, scores in gs.grid_scores_:
-            print("%f (+/-%0.03f) for %r"
-                  % (mean_score, scores.std() * 2, params))
-        print()
-
-        print("Detailed classification report:")
-        print()
-        print("The model is trained on the full development set.")
-        print("The scores are computed on the full evaluation set.")
-        print()
-        y_true, y_pred = self.y_test, gs.predict(self.x_test)
-        print(classification_report(y_true, y_pred))
-        print()
+        # print("Best parameters set found on development set:")
+        # print()
+        # print(gs.best_params_)
+        # print()
+        # print("Grid scores on development set:")
+        # print()
+        # for params, mean_score, scores in gs.grid_scores_:
+        #     print("%f (+/-%0.03f) for %r"
+        #           % (mean_score, scores.std() * 2, params))
+        # print()
+        #
+        # print("Detailed classification report:")
+        # print()
+        # print("The model is trained on the full development set.")
+        # print("The scores are computed on the full evaluation set.")
+        # print()
+        # y_true, y_pred = self.y_test, gs.predict(self.x_test)
+        # print(classification_report(y_true, y_pred))
+        # print()
         #########################################################
 
-        for params, mean_score, scores in gs.grid_scores_:
-            if params["clf__kernel"] == self.evaluator.pipeline.named_steps["clf"].kernel \
-                    and params["clf__C"] == self.evaluator.pipeline.named_steps["clf"].C \
-                    and params["clf__gamma"] == self.evaluator.pipeline.named_steps["clf"].gamma:
-                old_accuracy = mean_score
-
-        if self.best_estimator.named_steps["clf"].kernel == self.evaluator.pipeline.named_steps["clf"].kernel \
-                and self.best_estimator.named_steps["clf"].C == self.evaluator.pipeline.named_steps["clf"].C \
-                and self.best_estimator.named_steps["clf"].gamma == self.evaluator.pipeline.named_steps["clf"].gamma:
-            MsbBox.askquestion("Sorry", "Sorry, no more better models.")
-        elif new_accuracy > old_accuracy:
-            MsbBox.askquestion("Congrats", "A better model has been found:\nAccuracy increase from %f to %f" % (
-                old_accuracy, new_accuracy))
+        if new_score > old_score:
+            self.label_tips.config(text='New model improvement: %.2f%%' % (100.0 * (new_score - old_score) / old_score))
+            self.button_opt.config(text='应用', command=self.apply_new_estimator)
         else:
-            MsbBox.askquestion("Notificatoin",
-                               "A argumentative model has been found:\nAccuracy decrease from %f to %f" % (
-                                   old_accuracy, new_accuracy))
+            self.label_tips.config(text="No better model founded.")
+
+        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) +
+              " " +
+              "searching over: old_score=%f, new_score=%f" % (old_score, new_score))
+
+    def apply_new_estimator(self):
+        print(time.strftime("%Y-%m-%d %H:%M:%S",time.localtime()) +
+              " " +
+              "applying new models:\n old_model=%s \n new_model=%s" % (self.evaluator.pipeline, self.new_estimator))
+        self.evaluator.pipeline = self.new_estimator
+        self.subplot_train.cla()
+        self.yy = self.evaluator.pipeline.named_steps['clf'].predict(np.c_[self.xx1.ravel(), self.xx2.ravel()])
+        self.yy = self.yy.reshape(self.xx1.shape)
+        self.subplot_train.contourf(self.xx1, self.xx2, self.yy, cmap=plt.cm.get_cmap("Paired"), alpha=0.8)
+        self.subplot_train.scatter(self.x_train_r[:, 0], self.x_train_r[:, 1], c=self.y_train,
+                                   cmap=plt.cm.get_cmap("Paired"))
+        self.figure_train.canvas.draw()
+
+
+# 各个分类器和对应的参数值列表
+class ParameterSettings:
+    def __init__(self):
+        pass
+
+    clf_lr = LogisticRegression()
+    param_lr = {'clf__C': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]}
+
+    clf_svm_linear = SVC(kernel="linear", probability=True)
+    param_svm_linear = {'clf__C': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+                        'clf__kernel': ['linear']}
+
+    clf_svm_poly = SVC(kernel="poly", probability=True)
+    param_svm_poly = {'clf__C': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+                      'clf__degree': [2, 3, 4],
+                      'clf__kernel': ['poly']}
+
+    clf_svm_rbf = SVC(kernel="rbf", probability=True)
+    param_svm_rbf = {'clf__C': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+                     'clf__gamma': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+                     'clf__kernel': ['rbf']}
+
+    clf_rf = RandomForestClassifier()
+    param_rf = {'clf__n_estimators': [10, 20, 50, 100, 150, 200],
+                'clf__criterion': ["gini", "entropy"],
+                'clf__max_features': ["auto", "log2", None],
+                'clf__max_depth': [None, 2, 3, 4, 5, 6],
+                'clf__min_samples_split': [2, 3],
+                'clf__min_samples_leaf': [1, 2, 3],
+                'clf__min_weight_fraction_leaf': [0],
+                'clf__max_leaf_nodes': [None]}
+
+    possible_models = [(clf_lr, param_lr),
+                       (clf_svm_linear, param_svm_linear),
+                       (clf_svm_poly, param_svm_poly),
+                       (clf_svm_rbf, param_svm_rbf),
+                       (clf_rf, param_rf)]
+
+    possible_models = [
+        (clf_svm_rbf, param_svm_rbf)]
