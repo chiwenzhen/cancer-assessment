@@ -16,6 +16,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
+from sklearn.manifold import TSNE, SpectralEmbedding, Isomap, MDS, LocallyLinearEmbedding
 
 
 class MainFrame(Tk.Frame):
@@ -42,19 +43,14 @@ class MainFrame(Tk.Frame):
         frame_train.pack(fill=Tk.BOTH, expand=1, padx=15, pady=15)
         self.figure_train = Figure(figsize=(5, 4), dpi=100)
         self.subplot_train = self.figure_train.add_subplot(111)
-        self.subplot_train.set_title('Breast Cancer Evaluation Model')
+        self.subplot_train.set_title('t-SNE: convert high-dim to low-dim')
         self.figure_train.tight_layout()  # 一定要放在add_subplot函数之后，否则崩溃
         self.last_line = None
 
-        h = .02  # step size in the mesh
-        x1_min, x1_max = self.x_train_r[:, 0].min() - 1, self.x_train_r[:, 0].max() + 1
-        x2_min, x2_max = self.x_train_r[:, 1].min() - 1, self.x_train_r[:, 1].max() + 1
-        self.xx1, self.xx2 = np.meshgrid(np.arange(x1_min, x1_max, h), np.arange(x2_min, x2_max, h))
-        self.yy = self.evaluator.clf.predict(np.c_[self.xx1.ravel(), self.xx2.ravel()])
-        self.yy = self.yy.reshape(self.xx1.shape)
-        self.subplot_train.contourf(self.xx1, self.xx2, self.yy, cmap=plt.cm.get_cmap("Paired"), alpha=0.8)
-        self.subplot_train.scatter(self.x_train_r[:, 0], self.x_train_r[:, 1], c=y_train,
-                                   cmap=plt.cm.get_cmap("Paired"))
+        self.tsne = Isomap(n_components=2, n_neighbors=10)
+        np.set_printoptions(suppress=True)
+        x_train_r = self.tsne.fit_transform(x_train)
+        self.subplot_train.scatter(x_train_r[:, 0], x_train_r[:, 1], c=y_train, cmap=plt.cm.get_cmap("Paired"))
         self.attach_figure(self.figure_train, frame_train)
 
         y_pred = self.evaluator.pipeline.predict(x_train)
@@ -69,7 +65,7 @@ class MainFrame(Tk.Frame):
         frame_prob = Tk.Frame(self)
         frame_prob.pack(fill=Tk.BOTH, expand=1, padx=5, pady=5)
         self.strvar_prob = Tk.StringVar()
-        Tk.Label(frame_prob, text="malignant prob").pack(side=Tk.LEFT)
+        Tk.Label(frame_prob, text="prob").pack(side=Tk.LEFT)
         Tk.Entry(frame_prob, textvariable=self.strvar_prob, bd=5).pack(side=Tk.LEFT, padx=5, pady=5)
 
         # 3. 滑动条
@@ -99,7 +95,7 @@ class MainFrame(Tk.Frame):
             x[0, i] = float(self.slides[i].get())
         result = self.evaluator.predict(x)
         self.strvar_prob.set("%.2f%%" % (result[0, 1] * 100))  # 恶性肿瘤的概率
-        self.plot_point(self.subplot_train, self.evaluator.reduce(x))
+        self.plot_point(self.subplot_train, self.tsne.transform(x))
         self.figure_train.canvas.draw()
 
     # 重绘点

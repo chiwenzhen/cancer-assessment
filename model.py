@@ -18,7 +18,7 @@ from sklearn.svm import SVC
 
 
 class Evaluator:
-    def __init__(self, scaler=StandardScaler(), pca=PCA(n_components=2),
+    def __init__(self, scaler=StandardScaler(), pca=PCA(n_components=None),
                  clf=LogisticRegression(penalty='l2', random_state=1)):
         self.x_train = None
         self.x_test = None
