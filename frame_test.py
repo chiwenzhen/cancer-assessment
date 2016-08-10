@@ -53,7 +53,7 @@ class TestFrame(Tk.Frame):
         frame_result.pack(side=Tk.LEFT, fill='x', expand=1, padx=15, pady=15)
         Tk.Label(frame_result, text="Accuracy: ").grid(row=0, column=0, sticky=Tk.W)
         Tk.Label(frame_result, text=str(evaluator.pipeline.score(x_test, y_test))).grid(row=0, column=1,
-                                                                                             sticky=Tk.W)
+                                                                                        sticky=Tk.W)
         Tk.Label(frame_result, text="Precision: ").grid(row=1, column=0, sticky=Tk.W)
         Tk.Label(frame_result, text=str(precision_score(y_true=y_test, y_pred=y_pred))).grid(row=1, column=1,
                                                                                              sticky=Tk.W)

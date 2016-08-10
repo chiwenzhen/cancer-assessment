@@ -88,15 +88,18 @@ class CancerDataSet:
         self.y = le.fit_transform(y)  # 把字符串标签转换为整数，恶性M-1，良性B-0
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=test_percent,
                                                                                 random_state=1)  # 拆分成训练集(80%)和测试集(20%)
+        self.feature_num = le.classes_.shape[0]
 
 
 # 载入胎心监护数据
 class CardiotocographyDataSet:
     def __init__(self, data_path="CTG.xls", test_percent=0.2):
         df = pd.read_excel(data_path, header=2, sheetname=1)
-        self.x = df.loc[:, 2:].values  # 训练集特征
-        y = df.loc[:, 1].values  # 训练集标签
+        df = df[0:2125]                         # 选择0-2125行
+        self.x = df.iloc[:, 10:30].values       # 10-30列为训练集特征
+        y = df.iloc[:, 45].values                # 45列为训练集标签
         le = LabelEncoder()
         self.y = le.fit_transform(y)  # 把字符串标签转换为整数，恶性M-1，良性B-0
         self.x_train, self.x_test, self.y_train, self.y_test = train_test_split(self.x, self.y, test_size=test_percent,
                                                                                 random_state=1)  # 拆分成训练集(80%)和测试集(20%)
+        self.feature_num = le.classes_.shape[0]
