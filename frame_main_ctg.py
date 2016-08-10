@@ -17,9 +17,11 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
 from sklearn.manifold import TSNE, SpectralEmbedding, Isomap, MDS, LocallyLinearEmbedding
+from sklearn.grid_search import RandomizedSearchCV
+import scipy as sp
 
 
-class MainFrame(Tk.Frame):
+class CardiotocographyMainFrame(Tk.Frame):
     def __init__(self, master, x_train, y_train, x_test, y_test, evaluator):
         Tk.Frame.__init__(self, master)
         self.evaluator = evaluator
@@ -131,16 +133,19 @@ class MainFrame(Tk.Frame):
         # 计算新模型们中最好的交叉验证精度
         new_score = -1.0
         self.new_estimator = None
-        for clf, param_grid in ParameterSettings.possible_models:
-            estimator = Pipeline([('scl', StandardScaler()), ('clf', clf)])
-            gs = GridSearchCV(estimator=estimator, param_grid=param_grid, scoring='accuracy', cv=10, n_jobs=-1)
+        for clf, param_grid in RandomParameterSettings.possible_models:
+            print("testing model:" + str(clf))
+            estimator = Pipeline([('scl', StandardScaler()), ('pca', PCA()), ('clf', clf)])
+            gs = RandomizedSearchCV(estimator=estimator, param_distributions=param_grid, scoring='accuracy', cv=10,
+                                    n_jobs=-1)
             gs = gs.fit(self.x_train, self.y_train)
             if new_score < gs.best_score_:
                 new_score = gs.best_score_
                 self.new_estimator = gs.best_estimator_
 
         if new_score > old_score:
-            self.label_tips.config(text='New model\'s improvement: %.2f%%' % (100.0 * (new_score - old_score) / old_score))
+            self.label_tips.config(
+                text='New model\'s improvement: %.2f%%' % (100.0 * (new_score - old_score) / old_score))
             self.button_opt.config(text='应用', command=self.apply_new_estimator)
         else:
             self.label_tips.config(text="No better model founded.")
@@ -154,42 +159,85 @@ class MainFrame(Tk.Frame):
               " " +
               "APPLY NEW MODEL:\n old_model=%s \n new_model=%s" % (self.evaluator.pipeline, self.new_estimator))
         self.evaluator.pipeline = self.new_estimator
-        self.last_line = None
-        self.subplot_train.cla()
-        self.predict(None)
-        self.yy = self.evaluator.pipeline.named_steps['clf'].predict(np.c_[self.xx1.ravel(), self.xx2.ravel()])
-        self.yy = self.yy.reshape(self.xx1.shape)
-        self.subplot_train.contourf(self.xx1, self.xx2, self.yy, cmap=plt.cm.get_cmap("Paired"), alpha=0.8)
-        self.subplot_train.scatter(self.x_train_r[:, 0], self.x_train_r[:, 1], c=self.y_train,
-                                   cmap=plt.cm.get_cmap("Paired"))
-        self.figure_train.canvas.draw()
 
 
-# 各个分类器和对应的参数值列表
-class ParameterSettings:
+# 各个分类器和对应的参数值列表-GridsearchCV
+class GridParameterSettings:
     def __init__(self):
         pass
 
     clf_lr = LogisticRegression()
-    param_lr = {'clf__C': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]}
+    param_lr = {
+        'clf__C': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0]}
 
     clf_svm_linear = SVC(kernel="linear", probability=True)
-    param_svm_linear = {'clf__C': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
-                        'clf__kernel': ['linear']}
+    param_svm_linear = {
+        'clf__C': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+        'clf__kernel': ['linear']}
 
     clf_svm_poly = SVC(kernel="poly", probability=True)
-    param_svm_poly = {'clf__C': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
-                      'clf__degree': [2, 3, 4],
-                      'clf__kernel': ['poly']}
+    param_svm_poly = {
+        'clf__C': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+        'clf__degree': [2, 3, 4],
+        'clf__kernel': ['poly']}
 
     clf_svm_rbf = SVC(kernel="rbf", probability=True)
-    param_svm_rbf = {'clf__C': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
-                     'clf__gamma': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
-                     'clf__kernel': ['rbf']}
+    param_svm_rbf = {
+        'clf__C': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+        'clf__gamma': [0.0001, 0.001, 0.01, 0.1, 1.0, 10.0, 100.0, 1000.0],
+        'clf__kernel': ['rbf']}
 
     clf_rf = RandomForestClassifier()
-    param_rf = {'clf__n_estimators': [10, 20, 50, 100, 150, 200],
-                'clf__criterion': ["gini", "entropy"]}
+    param_rf = {
+        'clf__n_estimators': [10, 20, 50, 100, 150, 200],
+        'clf__criterion': ["gini", "entropy"]}
+
+    possible_models = [(clf_lr, param_lr),
+                       (clf_svm_linear, param_svm_linear),
+                       (clf_svm_poly, param_svm_poly),
+                       (clf_svm_rbf, param_svm_rbf),
+                       (clf_rf, param_rf)]
+
+    possible_models = [(clf_lr, param_lr),
+                       (clf_rf, param_rf)]
+
+
+# 各个分类器和对应的参数值列表-RandomsearchCV
+class RandomParameterSettings:
+    def __init__(self):
+        pass
+    pca_n_components = [2, None]
+
+    clf_lr = LogisticRegression()
+    param_lr = {
+        'pca__n_components':pca_n_components,
+        'clf__C': sp.stats.expon(scale=100)}
+
+    clf_svm_linear = SVC(kernel="linear", probability=True)
+    param_svm_linear = {
+        'pca__n_components': pca_n_components,
+        'clf__C': sp.stats.expon(scale=100),
+        'clf__kernel': ['linear']}
+
+    clf_svm_poly = SVC(kernel="poly", probability=True)
+    param_svm_poly = {
+        'pca__n_components': pca_n_components,
+        'clf__C': sp.stats.expon(scale=100),
+        'clf__degree': [2, 3, 4],
+        'clf__kernel': ['poly']}
+
+    clf_svm_rbf = SVC(kernel="rbf", probability=True)
+    param_svm_rbf = {
+        'pca__n_components': pca_n_components,
+        'clf__C': sp.stats.expon(scale=100),
+        'clf__gamma': sp.stats.expon(scale=.1),
+        'clf__kernel': ['rbf']}
+
+    clf_rf = RandomForestClassifier()
+    param_rf = {
+        'pca__n_components': pca_n_components,
+        'clf__n_estimators': [10, 20, 50, 100, 150, 200],
+        'clf__criterion': ["gini", "entropy"]}
 
     possible_models = [(clf_lr, param_lr),
                        (clf_svm_linear, param_svm_linear),

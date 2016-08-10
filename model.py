@@ -18,8 +18,7 @@ from sklearn.svm import SVC
 
 
 class Evaluator:
-    def __init__(self, scaler=StandardScaler(), pca=PCA(n_components=None),
-                 clf=LogisticRegression(penalty='l2', random_state=1)):
+    def __init__(self, scaler=None, pca=None, clf=None):
         self.x_train = None
         self.x_test = None
         self.y_train = None
@@ -27,7 +26,13 @@ class Evaluator:
         self.scaler = scaler
         self.pca = pca
         self.clf = clf
-        self.estimators = [('scl', self.scaler), ('pca', self.pca), ('clf', self.clf)]
+        self.estimators = []
+        if self.scaler is not None:
+            self.estimators.append(('scl', self.scaler))
+        if self.pca is not None:
+            self.estimators.append(('pca', self.pca))
+        if self.clf is not None:
+            self.estimators.append(('clf', self.clf))
         self.pipeline = Pipeline(self.estimators)  # 可以通过pipe.named_steps['pca']来访问PCA对象
 
     def load_data(self, x_train, y_train, x_test, y_test):
@@ -36,6 +41,8 @@ class Evaluator:
     # 训练模型
     def train(self):
         self.pipeline.fit(self.x_train, self.y_train)
+        pass
+        pass
 
     # 评估模型
     def score(self):
@@ -79,7 +86,7 @@ class Evaluator:
 
 
 # 载入乳腺肿瘤数据
-class CancerDataSet:
+class BreastCancerDataSet:
     def __init__(self, data_path="wdbc.data", test_percent=0.2):
         df = pd.read_csv(data_path, header=None)
         self.x = df.loc[:, 2:].values  # 训练集特征

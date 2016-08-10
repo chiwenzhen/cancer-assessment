@@ -8,9 +8,11 @@ chiwenzhen
 import sys
 import Tkinter as Tk
 from ttk import Notebook
-from model import Evaluator, CancerDataSet, CardiotocographyDataSet
-from sklearn.linear_model import LogisticRegression
+from model import Evaluator, BreastCancerDataSet, CardiotocographyDataSet
 from sklearn.svm import SVC
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from frame_train import TrainFrame
 from frame_test import TestFrame
@@ -19,17 +21,27 @@ from frame_validation_curve import ValidationCurveFrame
 from frame_roc_auc import RocAucFrame
 from frame_gridsearchcv import GridSearchCVFrame
 from frame_tsne import TSNEFrame
-from frame_main import MainFrame
+from frame_main_ctg import CardiotocographyMainFrame
+from frame_main_bcancer import BreastCancerMainFrame
+
 
 
 class App:
     def __init__(self, root):
         # 数据载入和分类器训练
-        self.dataset = CardiotocographyDataSet()
-        x_train = self.dataset.x_train
-        y_train = self.dataset.y_train
-        x_test = self.dataset.x_test
-        y_test = self.dataset.y_test
+        bc_dataset = BreastCancerDataSet()
+        bc_x_train = bc_dataset.x_train
+        bc_y_train = bc_dataset.y_train
+        bc_x_test = bc_dataset.x_test
+        bc_y_test = bc_dataset.y_test
+
+        ctg_dataset = CardiotocographyDataSet()
+        ctg_x_train = ctg_dataset.x_train
+        ctg_y_train = ctg_dataset.y_train
+        ctg_x_test = ctg_dataset.x_test
+        ctg_y_test = ctg_dataset.y_test
+
+
 
         # 初始化UI
         menubar = Tk.Menu(root)  # 添加菜单
@@ -43,6 +55,14 @@ class App:
 
         page_0 = Tk.Frame(notebook)
         notebook.add(page_0, text="Main  ")
+        notebook_0 = Notebook(page_0)  # 添加子标签页
+        notebook_0.pack(fill=Tk.BOTH)
+        page_01 = Tk.Frame(notebook_0)
+        notebook_0.add(page_01, text="Breast Cancer")
+        page_02 = Tk.Frame(notebook_0)
+        notebook_0.add(page_02, text="Cardiotocography")
+        page_03 = Tk.Frame(notebook_0)
+        notebook_0.add(page_03, text="Cardiotocography Features")
 
         page_1 = Tk.Frame(notebook)
         notebook.add(page_1, text="Training  ")
@@ -82,8 +102,11 @@ class App:
         notebook.add(page_7, text="t-SNE")
 
         # 第0页 主页
-        clf = Evaluator(clf=SVC(probability=True, random_state=1))
-        MainFrame(page_0, x_train, y_train, x_test, y_test, clf).pack(fill=Tk.BOTH)
+        bc_eva = Evaluator(scaler=StandardScaler(), pca=PCA(n_components=2), clf=SVC(probability=True, random_state=1))
+        BreastCancerMainFrame(page_01, bc_x_train, bc_y_train, bc_x_test, bc_y_test, bc_eva).pack(fill=Tk.BOTH)
+
+        ctg_eva = Evaluator(scaler=StandardScaler(), pca=PCA(n_components=2), clf=SVC(probability=True, random_state=1))
+        CardiotocographyMainFrame(page_02, ctg_x_train, ctg_y_train, ctg_x_test, ctg_y_test, ctg_eva).pack(fill=Tk.BOTH)
 
         # # 第1.1页 LR训练
         # clf_lr = CancerEvaluator()
@@ -124,6 +147,7 @@ class App:
         #
         # # 第7页 t-SNE
         # TSNEFrame(page_7, x_train, y_train, None, None, None).pack(fill=Tk.BOTH)
+
 
 if __name__ == "__main__":
     master = Tk.Tk()
