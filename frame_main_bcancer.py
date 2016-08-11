@@ -18,7 +18,7 @@ from sklearn.pipeline import Pipeline
 
 
 class BreastCancerMainFrame(Tk.Frame):
-    def __init__(self, master, x_train, y_train, x_test, y_test, evaluator):
+    def __init__(self, master, x_train, y_train, x_test, y_test, evaluator, console):
         Tk.Frame.__init__(self, master)
         self.evaluator = evaluator
         self.x_train = x_train
@@ -26,6 +26,7 @@ class BreastCancerMainFrame(Tk.Frame):
         self.x_test = x_test
         self.y_test = y_test
         self.new_estimator = None
+        self.console = console
         self.evaluator.load_data(x_train, y_train, x_test, y_test)
         self.evaluator.train()
         self.x_train_r = self.evaluator.reduce(x_train)  # 特征降维
@@ -52,7 +53,7 @@ class BreastCancerMainFrame(Tk.Frame):
         self.yy = self.evaluator.clf.predict(np.c_[self.xx1.ravel(), self.xx2.ravel()])
         self.yy = self.yy.reshape(self.xx1.shape)
         self.subplot_train.contourf(self.xx1, self.xx2, self.yy, cmap=plt.cm.get_cmap("Paired"), alpha=0.8)
-        self.subplot_train.scatter(self.x_train_r[:, 0], self.x_train_r[:, 1], c=y_train, label=["malignent", "benign"],
+        self.subplot_train.scatter(self.x_train_r[:, 0], self.x_train_r[:, 1], c=y_train,
                                    cmap=plt.cm.get_cmap("Paired"))
         print(self.evaluator.pipeline.named_steps['clf'])
         self.attach_figure(self.figure_train, frame_train)

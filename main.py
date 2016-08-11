@@ -25,6 +25,8 @@ from frame_main_ctg import CardiotocographyMainFrame
 from frame_main_bcancer import BreastCancerMainFrame
 from frame_features_pair import FeaturesPairFrame
 from frame_features_corr import FeaturesCorrFrame
+from frame_features_rank import FeaturesRankFrame
+from frame_console import ConsoleFrame
 
 
 class App:
@@ -60,10 +62,14 @@ class App:
         notebook_0.add(page_01, text="Breast Cancer")
         page_02 = Tk.Frame(notebook_0)
         notebook_0.add(page_02, text="Cardiotocography")
-        page_03 = Tk.Frame(notebook_0)
-        notebook_0.add(page_03, text="Cardiotocography Features Pair")
+        page_05 = Tk.Frame(notebook_0)
+        notebook_0.add(page_05, text="Cardiotocography Features Rank")
         page_04 = Tk.Frame(notebook_0)
         notebook_0.add(page_04, text="Cardiotocography Features Corr")
+        page_03 = Tk.Frame(notebook_0)
+        notebook_0.add(page_03, text="Cardiotocography Features Pair")
+        page_06 = Tk.Frame(notebook_0)
+        notebook_0.add(page_06, text="Console Output")
 
         page_1 = Tk.Frame(notebook)
         notebook.add(page_1, text="Training  ")
@@ -103,17 +109,26 @@ class App:
         notebook.add(page_7, text="t-SNE")
 
         # 第0页 主页
+
+        console = ConsoleFrame(page_06)
+        console.pack(fill=Tk.BOTH)
+
         bc_eva = Evaluator(scaler=StandardScaler(), pca=PCA(n_components=2), clf=SVC(probability=True, random_state=1))
-        BreastCancerMainFrame(page_01, bc_x_train, bc_y_train, bc_x_test, bc_y_test, bc_eva).pack(fill=Tk.BOTH)
+        BreastCancerMainFrame(page_01, bc_x_train, bc_y_train, bc_x_test, bc_y_test, bc_eva, console).pack(fill=Tk.BOTH)
 
         ctg_eva = Evaluator(scaler=StandardScaler(), pca=PCA(n_components=2), clf=SVC(probability=True, random_state=1))
-        CardiotocographyMainFrame(page_02, ctg_x_train, ctg_y_train, ctg_x_test, ctg_y_test, ctg_eva).pack(fill=Tk.BOTH)
+        CardiotocographyMainFrame(page_02, ctg_x_train, ctg_y_train, ctg_x_test, ctg_y_test, ctg_eva, console).pack(fill=Tk.BOTH)
 
-        FeaturesPairFrame(page_03, ctg_x_train, ctg_y_train, ctg_x_test, ctg_y_test, ctg_eva, ctg_dataset.df).pack(
+        FeaturesPairFrame(page_03, ctg_x_train, ctg_y_train, ctg_x_test, ctg_y_test, ctg_eva, ctg_dataset.df, console).pack(
             fill=Tk.BOTH)
 
-        FeaturesCorrFrame(page_04, ctg_x_train, ctg_y_train, ctg_x_test, ctg_y_test, ctg_eva, ctg_dataset.df).pack(
+        FeaturesCorrFrame(page_04, ctg_x_train, ctg_y_train, ctg_x_test, ctg_y_test, ctg_eva, ctg_dataset.df, console).pack(
             fill=Tk.BOTH)
+
+        FeaturesRankFrame(page_05, ctg_x_train, ctg_y_train, ctg_x_test, ctg_y_test, ctg_eva, ctg_dataset.df, console).pack(
+            fill=Tk.BOTH)
+
+
 
         # # 第1.1页 LR训练
         # clf_lr = CancerEvaluator()

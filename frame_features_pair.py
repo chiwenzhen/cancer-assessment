@@ -11,7 +11,7 @@ from sklearn.feature_selection import SelectKBest, chi2, f_classif
 
 
 class FeaturesPairFrame(Tk.Frame):
-    def __init__(self, master, x_train, y_train, x_test, y_test, evaluator, df):
+    def __init__(self, master, x_train, y_train, x_test, y_test, evaluator, df, console):
         Tk.Frame.__init__(self, master)
         self.x_train = x_train
         self.y_train = y_train
@@ -19,6 +19,7 @@ class FeaturesPairFrame(Tk.Frame):
         self.y_test = y_test
         self.evaluator = evaluator
         self.df = df
+        self.console = console
 
         frame_train = Tk.Frame(self)
         frame_train.pack(fill=Tk.BOTH, expand=1, padx=15, pady=15)
@@ -32,11 +33,9 @@ class FeaturesPairFrame(Tk.Frame):
         kbest_feature_indexes = selection.get_support()
         kbest_feature_names = feature_names[kbest_feature_indexes]
 
-        _ = sns.pairplot(self.df[:200], vars=kbest_feature_names, hue="NSP", size=2.8)
-        figure_pair = plt.gcf()
-        self.attach_figure(figure_pair, frame_train)
-
-        # _ = sns.corrplot(df, annot=False)
+        _ = sns.pairplot(self.df[:200], vars=kbest_feature_names, hue="NSP", size=2)
+        plt.title("Feature Pair and Label", )
+        self.attach_figure(plt.gcf(), frame_train)
 
     # 将figure放到frame上
     @staticmethod

@@ -22,7 +22,7 @@ import scipy as sp
 
 
 class CardiotocographyMainFrame(Tk.Frame):
-    def __init__(self, master, x_train, y_train, x_test, y_test, evaluator):
+    def __init__(self, master, x_train, y_train, x_test, y_test, evaluator, console):
         Tk.Frame.__init__(self, master)
         self.evaluator = evaluator
         self.x_train = x_train
@@ -30,6 +30,7 @@ class CardiotocographyMainFrame(Tk.Frame):
         self.x_test = x_test
         self.y_test = y_test
         self.new_estimator = None
+        self.console = console
         self.evaluator.load_data(x_train, y_train, x_test, y_test)
         self.evaluator.train()
         self.x_train_r = self.evaluator.reduce(x_train)  # 特征降维
@@ -45,7 +46,7 @@ class CardiotocographyMainFrame(Tk.Frame):
         frame_train.pack(fill=Tk.BOTH, expand=1, padx=15, pady=15)
         self.figure_train = Figure(figsize=(5, 4), dpi=100)
         self.subplot_train = self.figure_train.add_subplot(111)
-        self.subplot_train.set_title('Cardiotocography High-Dimension Data Visualization')
+        self.subplot_train.set_title('Cardiotocography High-Dimension Data Visualization (21-dim)')
         self.figure_train.tight_layout()  # 一定要放在add_subplot函数之后，否则崩溃
         self.last_line = None
 
@@ -57,8 +58,12 @@ class CardiotocographyMainFrame(Tk.Frame):
 
         y_pred = self.evaluator.pipeline.predict(x_train)
         accuracy = accuracy_score(y_true=y_train, y_pred=y_pred)
+
+        self.console.output("INIT MODEL: ", str(self.evaluator.pipeline.named_steps['clf']))
+        self.console.output("INIT MODEL ACCURACY: ", str(accuracy))
+
         print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) +
-              " INIT MODEL: " +
+              "INIT MODEL: " +
               str(self.evaluator.pipeline.named_steps['clf']))
         print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) +
               " INIT MODEL ACCURACY: " + str(accuracy))
@@ -121,6 +126,9 @@ class CardiotocographyMainFrame(Tk.Frame):
 
     # 搜索最优参数
     def optimize_parameter(self):
+
+        self.console.output("SEARCH START", "")
+
         print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) +
               " " +
               "SEARCH START")
@@ -134,6 +142,7 @@ class CardiotocographyMainFrame(Tk.Frame):
         new_score = -1.0
         self.new_estimator = None
         for clf, param_grid in RandomParameterSettings.possible_models:
+            self.console.output("SEARCHING MODEL:", str(clf))
             print("testing model:" + str(clf))
             estimator = Pipeline([('scl', StandardScaler()), ('pca', PCA()), ('clf', clf)])
             gs = RandomizedSearchCV(estimator=estimator, param_distributions=param_grid, scoring='accuracy', cv=10,
@@ -150,11 +159,13 @@ class CardiotocographyMainFrame(Tk.Frame):
         else:
             self.label_tips.config(text="No better model founded.")
 
+        self.console.output("SEARCH COMPLETE:", "old_model_accuracy=%f, new_model_accuracy=%f" % (old_score, new_score))
         print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) +
               " " +
               "SEARCH COMPLETE: old_model_accuracy=%f, new_model_accuracy=%f" % (old_score, new_score))
 
     def apply_new_estimator(self):
+        self.console.output("APPLY NEW MODEL:", "\n old_model=%s \n new_model=%s" % (self.evaluator.pipeline, self.new_estimator))
         print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) +
               " " +
               "APPLY NEW MODEL:\n old_model=%s \n new_model=%s" % (self.evaluator.pipeline, self.new_estimator))

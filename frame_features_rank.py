@@ -1,6 +1,7 @@
 # coding=utf-8
 import Tkinter as Tk
 import numpy as np
+import pandas as pd
 from sklearn.metrics import accuracy_score
 
 import matplotlib.pyplot as plt
@@ -10,7 +11,7 @@ import seaborn as sns
 from sklearn.feature_selection import SelectKBest, chi2, f_classif
 
 
-class FeaturesCorrFrame(Tk.Frame):
+class FeaturesRankFrame(Tk.Frame):
     def __init__(self, master, x_train, y_train, x_test, y_test, evaluator, df, console):
         Tk.Frame.__init__(self, master)
         self.x_train = x_train
@@ -25,20 +26,24 @@ class FeaturesCorrFrame(Tk.Frame):
         frame_train.pack(fill=Tk.BOTH, expand=1, padx=15, pady=15)
         plt.figure(figsize=(12, 20))
         plt.subplot(111)
+        
+        # k best feature's names
+        plt.figure(figsize=(12, 3))
+        plt.subplot(111)
+        selection = SelectKBest(f_classif, k=3)
+        selection.fit(self.x_train, self.y_train)
+        feature_scores = selection.scores_
+        feature_names = df.columns.values
+        feature_names = feature_names[feature_names != "NSP"]
+        kbest_feature_indexes = selection.get_support()
+        kbest_feature_names = feature_names[kbest_feature_indexes]
 
-        # 背景色白色
-        sns.set(style="white")
-        # 特征关联矩阵（矩阵里不仅包含特征，还包括类别）
-        corr = df.corr()
-        # 隐藏矩阵的上三角
-        mask = np.zeros_like(corr, dtype=np.bool)
-        mask[np.triu_indices_from(mask)] = True
-        # 画图
-        f, ax = plt.subplots(figsize=(11, 11))
-        cmap = sns.diverging_palette(220, 10, as_cmap=True)
-        sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, square=True, yticklabels=5, linewidths=.5,
-                    cbar_kws={"shrink": .5}, ax=ax)
-        plt.title("Feature Correlation")
+        # 存为DataFrame
+        rec = zip(feature_scores, feature_names)
+        data = pd.DataFrame(rec, columns=["Score", "Feature"])
+
+        g = sns.barplot(x="Feature", y="Score", data=data)
+        plt.title("Feature Scores Rank")
         self.attach_figure(plt.gcf(), frame_train)
 
     # 将figure放到frame上
