@@ -59,14 +59,8 @@ class CardiotocographyMainFrame(Tk.Frame):
         y_pred = self.evaluator.pipeline.predict(x_train)
         accuracy = accuracy_score(y_true=y_train, y_pred=y_pred)
 
-        self.console.output("INIT MODEL: ", str(self.evaluator.pipeline.named_steps['clf']))
-        self.console.output("INIT MODEL ACCURACY: ", str(accuracy))
-
-        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) +
-              "INIT MODEL: " +
-              str(self.evaluator.pipeline.named_steps['clf']))
-        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) +
-              " INIT MODEL ACCURACY: " + str(accuracy))
+        self.console.output("[CTG] INIT MODEL: ", str(self.evaluator.pipeline.named_steps['clf']) + "\n")
+        self.console.output("[CTG] INIT ACCURACY: ", str(accuracy) + "\n")
 
         # 2. 概率输出框
         frame_prob = Tk.Frame(self)
@@ -127,11 +121,8 @@ class CardiotocographyMainFrame(Tk.Frame):
     # 搜索最优参数
     def optimize_parameter(self):
 
-        self.console.output("SEARCH START", "")
+        self.console.output("[CTG] OPTIMIZATION START...", "\n")
 
-        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) +
-              " " +
-              "SEARCH START")
         # 计算旧模型（即初始模型）的交叉验证精度
         old_scores = cross_validation.cross_val_score(estimator=self.evaluator.pipeline, X=self.x_train, y=self.y_train,
                                                       scoring='accuracy',
@@ -142,8 +133,7 @@ class CardiotocographyMainFrame(Tk.Frame):
         new_score = -1.0
         self.new_estimator = None
         for clf, param_grid in RandomParameterSettings.possible_models:
-            self.console.output("SEARCHING MODEL:", str(clf))
-            print("testing model:" + str(clf))
+            self.console.output("[CTG] SEARCH MODEL:", str(clf) + "\n")
             estimator = Pipeline([('scl', StandardScaler()), ('pca', PCA()), ('clf', clf)])
             gs = RandomizedSearchCV(estimator=estimator, param_distributions=param_grid, scoring='accuracy', cv=10,
                                     n_jobs=-1)
@@ -154,21 +144,18 @@ class CardiotocographyMainFrame(Tk.Frame):
 
         if new_score > old_score:
             self.label_tips.config(
-                text='New model\'s improvement: %.2f%%' % (100.0 * (new_score - old_score) / old_score))
+                text='Found a new model with improvement: %.2f%%' % (100.0 * (new_score - old_score) / old_score))
             self.button_opt.config(text='应用', command=self.apply_new_estimator)
         else:
             self.label_tips.config(text="No better model founded.")
 
-        self.console.output("SEARCH COMPLETE:", "old_model_accuracy=%f, new_model_accuracy=%f" % (old_score, new_score))
-        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) +
-              " " +
-              "SEARCH COMPLETE: old_model_accuracy=%f, new_model_accuracy=%f" % (old_score, new_score))
+        self.console.output("[CTG] OPTIMIZATION COMPLETE !", "\n")
+        self.console.output("[CTG] RESULT: ", "old_model_accuracy=%f, new_model_accuracy=%f, improvement=%.2f%%\n" % (
+        old_score, new_score, (100.0 * (new_score - old_score) / old_score)) + "\n")
 
     def apply_new_estimator(self):
-        self.console.output("APPLY NEW MODEL:", "\n old_model=%s \n new_model=%s" % (self.evaluator.pipeline, self.new_estimator))
-        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) +
-              " " +
-              "APPLY NEW MODEL:\n old_model=%s \n new_model=%s" % (self.evaluator.pipeline, self.new_estimator))
+        self.console.output("[CTG] APPLY NEW MODEL:",
+                            "old_model=%s \n new_model=%s\n" % (self.evaluator.pipeline, self.new_estimator))
         self.evaluator.pipeline = self.new_estimator
 
 
@@ -217,11 +204,12 @@ class GridParameterSettings:
 class RandomParameterSettings:
     def __init__(self):
         pass
+
     pca_n_components = [2, None]
 
     clf_lr = LogisticRegression()
     param_lr = {
-        'pca__n_components':pca_n_components,
+        'pca__n_components': pca_n_components,
         'clf__C': sp.stats.expon(scale=100)}
 
     clf_svm_linear = SVC(kernel="linear", probability=True)

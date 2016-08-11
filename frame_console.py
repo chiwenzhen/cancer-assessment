@@ -18,7 +18,7 @@ class ConsoleFrame(Tk.Frame):
         scrollbar = Tk.Scrollbar(self)
         scrollbar.pack(side=Tk.RIGHT, fill=Tk.Y)
 
-        self.console = Tk.Text(self, width=800, wrap='none', yscrollcommand=scrollbar.set)
+        self.console = Tk.Text(self, width=800, height=1000, wrap='none', yscrollcommand=scrollbar.set)
         self.console.pack()
 
         scrollbar.config(command=self.console.yview)

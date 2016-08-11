@@ -33,7 +33,7 @@ class FeaturesPairFrame(Tk.Frame):
         kbest_feature_indexes = selection.get_support()
         kbest_feature_names = feature_names[kbest_feature_indexes]
 
-        _ = sns.pairplot(self.df[:200], vars=kbest_feature_names, hue="NSP", size=2)
+        _ = sns.pairplot(self.df[:200], vars=kbest_feature_names, hue="NSP", size=2.8)
         plt.title("Feature Pair and Label", )
         self.attach_figure(plt.gcf(), frame_train)
 

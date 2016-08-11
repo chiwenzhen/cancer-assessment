@@ -36,7 +36,7 @@ class FeaturesCorrFrame(Tk.Frame):
         # 画图
         f, ax = plt.subplots(figsize=(11, 11))
         cmap = sns.diverging_palette(220, 10, as_cmap=True)
-        sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, square=True, yticklabels=5, linewidths=.5,
+        sns.heatmap(corr, mask=mask, cmap=cmap, vmax=.3, square=True, xticklabels=5,  yticklabels=5, linewidths=.5,
                     cbar_kws={"shrink": .5}, ax=ax)
         plt.title("Feature Correlation")
         self.attach_figure(plt.gcf(), frame_train)

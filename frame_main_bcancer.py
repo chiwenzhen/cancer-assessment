@@ -15,6 +15,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA
 from sklearn.pipeline import Pipeline
+from sklearn.metrics import accuracy_score
 
 
 class BreastCancerMainFrame(Tk.Frame):
@@ -55,8 +56,12 @@ class BreastCancerMainFrame(Tk.Frame):
         self.subplot_train.contourf(self.xx1, self.xx2, self.yy, cmap=plt.cm.get_cmap("Paired"), alpha=0.8)
         self.subplot_train.scatter(self.x_train_r[:, 0], self.x_train_r[:, 1], c=y_train,
                                    cmap=plt.cm.get_cmap("Paired"))
-        print(self.evaluator.pipeline.named_steps['clf'])
         self.attach_figure(self.figure_train, frame_train)
+
+        y_pred = self.evaluator.pipeline.predict(x_train)
+        accuracy = accuracy_score(y_true=y_train, y_pred=y_pred)
+        self.console.output("[BC] INIT MODEL: ", str(self.evaluator.pipeline.named_steps['clf']) + "\n")
+        self.console.output("[BC] INIT ACCURACY: ", str(accuracy) + "\n")
 
         # 2. 概率输出框
         frame_prob = Tk.Frame(self)
@@ -116,6 +121,8 @@ class BreastCancerMainFrame(Tk.Frame):
 
     # 搜索最优参数
     def optimize_parameter(self):
+        self.console.output("[BC] OPTIMIZATION START...", "\n")
+
         # 计算旧模型（即初始模型）的交叉验证精度
         old_scores = cross_validation.cross_val_score(estimator=self.evaluator.pipeline, X=self.x_train, y=self.y_train,
                                                       scoring='accuracy',
@@ -126,6 +133,7 @@ class BreastCancerMainFrame(Tk.Frame):
         new_score = -1.0
         self.new_estimator = None
         for clf, param_grid in ParameterSettings.possible_models:
+            self.console.output("[BC] SEARCH MODEL:", str(clf))
             estimator = Pipeline([('scl', StandardScaler()), ('pca', PCA(n_components=2)), ('clf', clf)])
             gs = GridSearchCV(estimator=estimator, param_grid=param_grid, scoring='accuracy', cv=10, n_jobs=-1)
             gs = gs.fit(self.x_train, self.y_train)
@@ -134,19 +142,19 @@ class BreastCancerMainFrame(Tk.Frame):
                 self.new_estimator = gs.best_estimator_
 
         if new_score > old_score:
-            self.label_tips.config(text='New model improvement: %.2f%%' % (100.0 * (new_score - old_score) / old_score))
+            self.label_tips.config(
+                text='Found a new model with improvement: %.2f%%' % (100.0 * (new_score - old_score) / old_score))
             self.button_opt.config(text='应用', command=self.apply_new_estimator)
         else:
-            self.label_tips.config(text="No better model founded.")
+            self.label_tips.config(text="No better model.")
 
-        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()) +
-              " " +
-              "searching over: old_score=%f, new_score=%f" % (old_score, new_score))
+        self.console.output("[BC] OPTIMIZATION COMPLETE!", "\n")
+        self.console.output("[BC] RESULT: ", "old_model_accuracy=%f, new_model_accuracy=%f, improvement=%.2f%%\n" % (
+        old_score, new_score, 100.0 * (new_score - old_score) / old_score))
 
     def apply_new_estimator(self):
-        print(time.strftime("%Y-%m-%d %H:%M:%S",time.localtime()) +
-              " " +
-              "applying new models:\n old_model=%s \n new_model=%s" % (self.evaluator.pipeline, self.new_estimator))
+        self.console.output("[BC] APPLY MODEL:",
+                            "old_model=%s \n new_model=%s\n" % (self.evaluator.pipeline, self.new_estimator))
         self.evaluator.pipeline = self.new_estimator
         self.last_line = None
         self.subplot_train.cla()
@@ -198,4 +206,5 @@ class ParameterSettings:
                        (clf_rf, param_rf)]
 
     possible_models = [
+        (clf_lr, param_lr),
         (clf_svm_rbf, param_svm_rbf)]
