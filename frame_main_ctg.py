@@ -45,7 +45,7 @@ class CardiotocographyMainFrame(Tk.Frame):
         frame_train.pack(fill=Tk.BOTH, expand=1, padx=15, pady=15)
         self.figure_train = Figure(figsize=(5, 4), dpi=100)
         self.subplot_train = self.figure_train.add_subplot(111)
-        self.subplot_train.set_title('t-SNE: convert high-dim to low-dim')
+        self.subplot_train.set_title('Cardiotocography High-Dimension Data Visualization')
         self.figure_train.tight_layout()  # 一定要放在add_subplot函数之后，否则崩溃
         self.last_line = None
 

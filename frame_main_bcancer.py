@@ -41,7 +41,7 @@ class BreastCancerMainFrame(Tk.Frame):
         frame_train.pack(fill=Tk.BOTH, expand=1, padx=15, pady=15)
         self.figure_train = Figure(figsize=(5, 4), dpi=100)
         self.subplot_train = self.figure_train.add_subplot(111)
-        self.subplot_train.set_title('Breast Cancer Evaluation Model')
+        self.subplot_train.set_title('Breast Cancer Evaluation Model (2-dim)')
         self.figure_train.tight_layout()  # 一定要放在add_subplot函数之后，否则崩溃
         self.last_line = None
 
@@ -52,7 +52,7 @@ class BreastCancerMainFrame(Tk.Frame):
         self.yy = self.evaluator.clf.predict(np.c_[self.xx1.ravel(), self.xx2.ravel()])
         self.yy = self.yy.reshape(self.xx1.shape)
         self.subplot_train.contourf(self.xx1, self.xx2, self.yy, cmap=plt.cm.get_cmap("Paired"), alpha=0.8)
-        self.subplot_train.scatter(self.x_train_r[:, 0], self.x_train_r[:, 1], c=y_train,
+        self.subplot_train.scatter(self.x_train_r[:, 0], self.x_train_r[:, 1], c=y_train, label=["malignent", "benign"],
                                    cmap=plt.cm.get_cmap("Paired"))
         print(self.evaluator.pipeline.named_steps['clf'])
         self.attach_figure(self.figure_train, frame_train)
