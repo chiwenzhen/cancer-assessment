@@ -5,6 +5,7 @@ breast cancer assessment (benign or malignant) using machine learning algorithm.
 Be sure you have installed the two components:
 * Anaconda
 * tabulate
+* seaborn
 
 It is really simple to use, just run the follow command:
 `python main.py`
