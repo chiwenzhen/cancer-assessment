@@ -28,7 +28,7 @@ class FeaturesRankFrame(Tk.Frame):
         plt.subplot(111)
         
         # k best feature's names
-        plt.figure(figsize=(12, 3))
+        plt.figure(figsize=(12, 8))
         plt.subplot(111)
         selection = SelectKBest(f_classif, k=3)
         selection.fit(self.x_train, self.y_train)
@@ -42,8 +42,9 @@ class FeaturesRankFrame(Tk.Frame):
         rec = zip(feature_scores, feature_names)
         data = pd.DataFrame(rec, columns=["Score", "Feature"])
 
-        g = sns.barplot(x="Feature", y="Score", data=data)
-        plt.title("Feature Scores Rank")
+        sns.barplot(x="Feature", y="Score", data=data)
+        plt.xticks(rotation=-90)
+        plt.title("Cardiotocography Feature Scores Ranking")
         self.attach_figure(plt.gcf(), frame_train)
 
     # 将figure放到frame上

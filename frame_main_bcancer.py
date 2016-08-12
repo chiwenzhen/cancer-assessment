@@ -155,6 +155,7 @@ class BreastCancerMainFrame(Tk.Frame):
     def apply_new_estimator(self):
         self.console.output("[BC] APPLY MODEL:",
                             "old_model=%s \n new_model=%s\n" % (self.evaluator.pipeline, self.new_estimator))
+        self.label_tips.config(text="New model has been applied.")
         self.evaluator.pipeline = self.new_estimator
         self.last_line = None
         self.subplot_train.cla()

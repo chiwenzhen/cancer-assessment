@@ -157,6 +157,7 @@ class CardiotocographyMainFrame(Tk.Frame):
         self.console.output("[CTG] APPLY NEW MODEL:",
                             "old_model=%s \n new_model=%s\n" % (self.evaluator.pipeline, self.new_estimator))
         self.evaluator.pipeline = self.new_estimator
+        self.label_tips.config(text="New model has been applied.")
 
 
 # 各个分类器和对应的参数值列表-GridsearchCV

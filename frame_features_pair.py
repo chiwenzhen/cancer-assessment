@@ -34,7 +34,7 @@ class FeaturesPairFrame(Tk.Frame):
         kbest_feature_names = feature_names[kbest_feature_indexes]
 
         _ = sns.pairplot(self.df[:200], vars=kbest_feature_names, hue="NSP", size=2.8)
-        plt.title("Feature Pair and Label", )
+        plt.title("Cardiotocography Relations between Feature Pair (3x3) and Label", loc='center')
         self.attach_figure(plt.gcf(), frame_train)
 
     # 将figure放到frame上
