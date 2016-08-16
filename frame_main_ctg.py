@@ -65,9 +65,18 @@ class CardiotocographyMainFrame(Tk.Frame):
         # 2. 概率输出框
         frame_prob = Tk.Frame(self)
         frame_prob.pack(fill=Tk.BOTH, expand=1, padx=5, pady=5)
-        self.strvar_prob = Tk.StringVar()
         Tk.Label(frame_prob, text="prob").pack(side=Tk.LEFT)
-        Tk.Entry(frame_prob, textvariable=self.strvar_prob, bd=5).pack(side=Tk.LEFT, padx=5, pady=5)
+        self.strvar_prob1 = Tk.StringVar()
+        Tk.Label(frame_prob, text="1.").pack(side=Tk.LEFT)
+        Tk.Entry(frame_prob, textvariable=self.strvar_prob1, bd=5).pack(side=Tk.LEFT, padx=5, pady=5)
+
+        self.strvar_prob2 = Tk.StringVar()
+        Tk.Label(frame_prob, text="2.").pack(side=Tk.LEFT)
+        Tk.Entry(frame_prob, textvariable=self.strvar_prob2, bd=5).pack(side=Tk.LEFT, padx=5, pady=5)
+
+        self.strvar_prob3 = Tk.StringVar()
+        Tk.Label(frame_prob, text="3.").pack(side=Tk.LEFT)
+        Tk.Entry(frame_prob, textvariable=self.strvar_prob3, bd=5).pack(side=Tk.LEFT, padx=5, pady=5)
 
         # 3. 滑动条
         frame_slides = Tk.Frame(self)
@@ -95,7 +104,9 @@ class CardiotocographyMainFrame(Tk.Frame):
         for i in range(feature_num):
             x[0, i] = float(self.slides[i].get())
         result = self.evaluator.predict(x)
-        self.strvar_prob.set("%.2f%%" % (result[0, 1] * 100))  # 恶性肿瘤的概率
+        self.strvar_prob1.set("%.2f%%" % (result[0, 0] * 100))  # 无病的概率
+        self.strvar_prob2.set("%.2f%%" % (result[0, 1] * 100))  # 存疑的概率
+        self.strvar_prob3.set("%.2f%%" % (result[0, 2] * 100))  # 确诊的概率
         self.plot_point(self.subplot_train, self.tsne.transform(x))
         self.figure_train.canvas.draw()
 
